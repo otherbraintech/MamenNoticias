@@ -3,12 +3,15 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import db from '@/libs/db';
 import bcrypt from 'bcrypt';
 
-// Ensure NEXTAUTH_URL is set for production
-const baseUrl = process.env.NEXTAUTH_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
-const useSecureCookies = process.env.NODE_ENV === 'production';
-
-// For Vercel deployments
+// Configuración de URLs
+const isProduction = process.env.NODE_ENV === 'production';
 const vercelUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null;
+const baseUrl = process.env.NEXTAUTH_URL || vercelUrl || 'http://localhost:3000';
+
+// Configuración de cookies para producción
+const cookiePrefix = isProduction ? '__Secure-' : '';
+const cookieDomain = isProduction ? '.mamen-noticias.vercel.app' : undefined;
+const useSecureCookies = isProduction;
 
 export const authOptions = {
   providers: [
@@ -55,22 +58,55 @@ export const authOptions = {
   },
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 30 * 24 * 60 * 60, // 30 días
+    updateAge: 24 * 60 * 60, // Actualizar la sesión cada 24 horas
   },
   cookies: {
     sessionToken: {
-      name: `__Secure-next-auth.session-token`,
+      name: `${cookiePrefix}next-auth.session-token`,
       options: {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
         secure: useSecureCookies,
-        domain: vercelUrl ? '.mamen-noticias.vercel.app' : undefined
+        domain: cookieDomain,
+        maxAge: 30 * 24 * 60 * 60 // 30 días
+      }
+    },
+    callbackUrl: {
+      name: `${cookiePrefix}next-auth.callback-url`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: useSecureCookies,
+        domain: cookieDomain
+      }
+    },
+    csrfToken: {
+      name: `${cookiePrefix}next-auth.csrf-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: useSecureCookies,
+        domain: cookieDomain
       }
     }
   },
   debug: process.env.NODE_ENV === 'development',
   useSecureCookies: useSecureCookies,
+  logger: {
+    error(code, metadata) {
+      console.error('NextAuth error:', { code, ...metadata });
+    },
+    warn(code) {
+      console.warn('NextAuth warning:', code);
+    },
+    debug(code, metadata) {
+      console.log('NextAuth debug:', { code, ...metadata });
+    }
+  },
   callbacks: {
     async jwt({ token, user }) {
       // Add user id to the token right after sign in
@@ -89,12 +125,21 @@ export const authOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // If a callback URL is provided, use it
+      // En producción, forzar el uso de HTTPS si es necesario
+      const productionUrl = baseUrl.replace('http://', 'https://');
+      
+      // Si la URL es relativa o pertenece a nuestro dominio, usarla
       if (url.startsWith(baseUrl) || url.startsWith('/')) {
         return url;
       }
-      // Fallback to base URL if nothing matches
-      return baseUrl;
+      
+      // Si es una URL de callback de NextAuth, asegurarse de que use HTTPS en producción
+      if (isProduction && url.startsWith('http://')) {
+        return url.replace('http://', 'https://');
+      }
+      
+      // Por defecto, redirigir al dashboard
+      return `${productionUrl}/dashboard`;
     },
     async signIn({ user, account, profile, email, credentials }) {
       return true;

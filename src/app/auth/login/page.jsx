@@ -1,43 +1,58 @@
 "use client";
 import { useForm } from "react-hook-form";
-import { signIn, useSession, getSession } from "next-auth/react";
+import { signIn, useSession, getSession, signOut } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
+import { usePathname } from 'next/navigation';
 
 function LoginPage() {
-  const { data: session, status, update } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
 
-  // Handle redirection if already authenticated
+  // Efecto para manejar el montaje del componente
   useEffect(() => {
-    const checkAuth = async () => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
+  // Efecto para redirigir si ya hay sesión
+  useEffect(() => {
+    if (status === 'authenticated' && mounted) {
+      // Usar window.location para forzar una recarga completa
+      window.location.href = callbackUrl;
+    } else if (status === 'unauthenticated') {
+      setIsLoading(false);
+    }
+  }, [status, callbackUrl, mounted]);
+
+  // Efecto para verificar la sesión al cargar
+  useEffect(() => {
+    const verifySession = async () => {
       try {
         const session = await getSession();
         if (session) {
-          // Force a hard redirect to ensure the app loads with the session
           window.location.href = callbackUrl;
+        } else {
+          setIsLoading(false);
         }
       } catch (error) {
-        console.error('Session check error:', error);
-      } finally {
+        console.error('Error al verificar sesión:', error);
         setIsLoading(false);
       }
     };
 
-    checkAuth();
-  }, [callbackUrl]);
-
-  // Handle session changes
-  useEffect(() => {
-    if (status === 'authenticated' && !isLoading) {
-      // Force a hard redirect when session becomes available
-      window.location.href = callbackUrl;
+    if (mounted) {
+      verifySession();
     }
-  }, [status, isLoading, callbackUrl]);
+  }, [mounted, callbackUrl]);
+
+
 
   // Show loading state
   if (status === 'loading' || isLoading) {
@@ -59,32 +74,31 @@ function LoginPage() {
       setError(null);
       setIsSubmitting(true);
       
-      // First, clear any existing session
-      await fetch('/api/auth/signout', { method: 'POST' });
+      // Cerrar sesión primero para limpiar cualquier estado anterior
+      await signOut({ redirect: false });
       
-      // Then sign in with credentials
-      const res = await signIn('credentials', {
+      // Intentar iniciar sesión
+      const result = await signIn('credentials', {
         redirect: false,
         identifier: data.identifier,
         password: data.password,
         callbackUrl: callbackUrl
       });
 
-      if (res?.error) {
-        setError(res.error);
+      if (result?.error) {
+        setError(result.error);
         setIsSubmitting(false);
         return;
       }
 
-      // Force a full page reload to ensure all session data is loaded
-      if (res?.url) {
-        window.location.href = res.url;
+      // Forzar recarga completa de la página
+      if (result?.url) {
+        window.location.href = result.url;
       } else {
-        // If no URL, force a refresh to get the latest session
         window.location.href = callbackUrl;
       }
     } catch (err) {
-      console.error('Login error:', err);
+      console.error('Error en inicio de sesión:', err);
       setError('Ocurrió un error al iniciar sesión. Por favor, inténtalo de nuevo.');
       setIsSubmitting(false);
     }
