@@ -1,7 +1,11 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import db from '@/libs/db'
-import bcrypt from 'bcrypt'
+import db from '@/libs/db';
+import bcrypt from 'bcrypt';
+
+// Ensure NEXTAUTH_URL is set for production
+const baseUrl = process.env.NEXTAUTH_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+const useSecureCookies = process.env.NEXTAUTH_URL?.startsWith('https://');
 
 export const authOptions = {
   providers: [
@@ -15,6 +19,7 @@ export const authOptions = {
         console.log(credentials)
 
         // Buscar por email o username
+        await db.$connect();
         const userFound = await db.user.findFirst({
           where: {
             OR: [
@@ -22,7 +27,8 @@ export const authOptions = {
               { username: credentials.identifier }
             ]
           }
-        })
+        });
+        await db.$disconnect();
 
         if (!userFound) throw new Error('Usuario no encontrado')
 
@@ -44,8 +50,26 @@ export const authOptions = {
     signIn: "/auth/login",
     error: "/auth/login"
   },
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  cookies: {
+    sessionToken: {
+      name: `${useSecureCookies ? '__Secure-' : ''}next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: useSecureCookies,
+        domain: process.env.NODE_ENV === 'production' ? '.mamen-noticias.vercel.app' : undefined
+      }
+    }
+  },
+  debug: process.env.NODE_ENV === 'development',
   callbacks: {
     async jwt({ token, user }) {
+      // Add user id to the token right after sign in
       if (user) {
         token.id = user.id;
         token.email = user.email;
@@ -53,6 +77,7 @@ export const authOptions = {
       return token;
     },
     async session({ session, token }) {
+      // Send properties to the client
       if (session?.user) {
         session.user.id = token.id;
         session.user.email = token.email;
@@ -60,20 +85,22 @@ export const authOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // Handle relative URLs
-      if (url.startsWith('/')) {
-        // Ensure we don't redirect back to login if already authenticated
-        if (url === '/auth/login') {
-          return `${baseUrl}/dashboard`;
-        }
-        return `${baseUrl}${url}`;
+      // Use the callbackUrl if it exists, otherwise redirect to dashboard
+      const callbackUrl = new URL(url, baseUrl);
+      const dashboardUrl = new URL('/dashboard', baseUrl);
+      
+      // If this is a callback URL from NextAuth, use it
+      if (url.startsWith('/') || url.startsWith(baseUrl)) {
+        return url.startsWith(baseUrl) ? url : `${baseUrl}${url}`;
       }
-      // Handle absolute URLs
-      else if (new URL(url).origin === baseUrl) {
+      
+      // If coming from an auth provider, check the callback URL
+      if (url.startsWith(callbackUrl.origin)) {
         return url;
       }
-      // Default to dashboard if no URL is provided
-      return `${baseUrl}/dashboard`;
+      
+      // Default to dashboard
+      return dashboardUrl.toString();
     },
     async signIn({ user, account, profile, email, credentials }) {
       return true;
