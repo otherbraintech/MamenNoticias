@@ -56,17 +56,22 @@ function LoginPage() {
   const [error, setError] = useState(null);
 
   const onSubmit = handleSubmit(async (data) => {
-    const res = await signIn("credentials", {
-      identifier: data.identifier,
-      password: data.password,
-      redirect: false,
-    });
+    try {
+      const res = await signIn("credentials", {
+        identifier: data.identifier,
+        password: data.password,
+        redirect: false,
+      });
 
-    if (res.error) {
-      setError(res.error);
-    } else {
-      router.push("/dashboard");
-      router.refresh();
+      if (res.error) {
+        setError(res.error);
+      } else {
+        // Force a full page reload to ensure all session data is loaded
+        window.location.href = '/dashboard';
+      }
+    } catch (err) {
+      setError('Error al iniciar sesión. Por favor intenta de nuevo.');
+      console.error('Login error:', err);
     }
   });
 
