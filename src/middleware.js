@@ -16,11 +16,17 @@ export async function middleware(request) {
     secureCookie: process.env.NODE_ENV === 'production'
   });
 
+  // Construir la URL base para redirecciones
+  const baseUrl = process.env.NEXTAUTH_URL || 
+                 (process.env.NODE_ENV === 'production' 
+                   ? 'https://' + (request.headers.get('host') || '') 
+                   : 'http://' + (request.headers.get('host') || 'localhost:3000'));
+
   // Si la ruta es pública, permitir el acceso
   if (isPublicPath) {
     // Si el usuario ya está autenticado y está en la página de login, redirigir al dashboard
     if (token && pathname.startsWith('/auth/login')) {
-      const url = new URL('/dashboard', request.url);
+      const url = new URL('/dashboard', baseUrl);
       return NextResponse.redirect(url);
     }
     return NextResponse.next();
@@ -28,7 +34,7 @@ export async function middleware(request) {
 
   // Si la ruta está protegida y no hay token, redirigir al login
   if (isProtectedPath && !token) {
-    const url = new URL('/auth/login', request.url);
+    const url = new URL('/auth/login', baseUrl);
     url.searchParams.set('callbackUrl', request.nextUrl.pathname);
     return NextResponse.redirect(url);
   }
