@@ -21,6 +21,15 @@ export default async function Navbar() {
             priority 
           />
         </Link>
+        <Link href="/auth/login" className="flex-shrink-0">
+          <Image
+            src="https://i.ibb.co/HphbQfhS/Copilot-20251106-114651-2.png"
+            alt="Tuto Logo"
+            width={140}
+            height={40}
+            priority 
+          />
+        </Link>
 
         {/* Desktop menu */}
         <ul className="hidden md:flex gap-6 text-[#ffffff] font-semibold text-base items-center">
