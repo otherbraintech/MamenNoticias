@@ -5,25 +5,39 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 
 function LoginPage() {
-  const { data: session, status } = useSession();
+  const { data: session, status, update } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
 
   // Handle redirection if already authenticated
   useEffect(() => {
     const checkAuth = async () => {
-      const session = await getSession();
-      if (session) {
-        window.location.href = callbackUrl;
-      } else {
+      try {
+        const session = await getSession();
+        if (session) {
+          // Force a hard redirect to ensure the app loads with the session
+          window.location.href = callbackUrl;
+        }
+      } catch (error) {
+        console.error('Session check error:', error);
+      } finally {
         setIsLoading(false);
       }
     };
 
     checkAuth();
   }, [callbackUrl]);
+
+  // Handle session changes
+  useEffect(() => {
+    if (status === 'authenticated' && !isLoading) {
+      // Force a hard redirect when session becomes available
+      window.location.href = callbackUrl;
+    }
+  }, [status, isLoading, callbackUrl]);
 
   // Show loading state
   if (status === 'loading' || isLoading) {
@@ -43,6 +57,12 @@ function LoginPage() {
   const onSubmit = handleSubmit(async (data) => {
     try {
       setError(null);
+      setIsSubmitting(true);
+      
+      // First, clear any existing session
+      await fetch('/api/auth/signout', { method: 'POST' });
+      
+      // Then sign in with credentials
       const res = await signIn('credentials', {
         redirect: false,
         identifier: data.identifier,
@@ -52,18 +72,21 @@ function LoginPage() {
 
       if (res?.error) {
         setError(res.error);
+        setIsSubmitting(false);
         return;
       }
 
-      // If no error, redirect to the callback URL or dashboard
+      // Force a full page reload to ensure all session data is loaded
       if (res?.url) {
         window.location.href = res.url;
       } else {
+        // If no URL, force a refresh to get the latest session
         window.location.href = callbackUrl;
       }
     } catch (err) {
       console.error('Login error:', err);
       setError('Ocurrió un error al iniciar sesión. Por favor, inténtalo de nuevo.');
+      setIsSubmitting(false);
     }
   });
 
