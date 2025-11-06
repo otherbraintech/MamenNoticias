@@ -1,20 +1,53 @@
 "use client";
 import { useForm } from "react-hook-form";
-import { signIn, useSession } from "next-auth/react";
+import { signIn, useSession, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+
+// Check if user is authenticated on the server side
+export async function getServerSideProps(context) {
+  const session = await getSession(context);
+  
+  if (session) {
+    return {
+      redirect: {
+        destination: '/dashboard',
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: {},
+  };
+}
 
 function LoginPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Redirigir si ya está autenticado
+  // Redirect if already authenticated
   useEffect(() => {
-    if (status === "loading") return; // Esperar a que cargue
-    if (session) {
-      router.replace("/dashboard");
-    }
-  }, [session, status, router]);
+    const checkAuth = async () => {
+      const session = await getSession();
+      if (session) {
+        router.replace('/dashboard');
+      } else {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [router]);
+
+  if (isLoading || status === 'loading') {
+    return (
+      <div className="min-h-[calc(100vh-7rem)] flex justify-center items-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
   const {
     register,
     handleSubmit,
