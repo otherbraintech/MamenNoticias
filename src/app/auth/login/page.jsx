@@ -1,47 +1,32 @@
 "use client";
 import { useForm } from "react-hook-form";
 import { signIn, useSession, getSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
-
-// Check if user is authenticated on the server side
-export async function getServerSideProps(context) {
-  const session = await getSession(context);
-  
-  if (session) {
-    return {
-      redirect: {
-        destination: '/dashboard',
-        permanent: false,
-      },
-    };
-  }
-
-  return {
-    props: {},
-  };
-}
 
 function LoginPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
+  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
 
-  // Redirect if already authenticated
+  // Handle redirection if already authenticated
   useEffect(() => {
     const checkAuth = async () => {
       const session = await getSession();
       if (session) {
-        router.replace('/dashboard');
+        window.location.href = callbackUrl;
       } else {
         setIsLoading(false);
       }
     };
 
     checkAuth();
-  }, [router]);
+  }, [callbackUrl]);
 
-  if (isLoading || status === 'loading') {
+  // Show loading state
+  if (status === 'loading' || isLoading) {
     return (
       <div className="min-h-[calc(100vh-7rem)] flex justify-center items-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
@@ -57,21 +42,28 @@ function LoginPage() {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      const res = await signIn("credentials", {
+      setError(null);
+      const res = await signIn('credentials', {
+        redirect: false,
         identifier: data.identifier,
         password: data.password,
-        redirect: false,
+        callbackUrl: callbackUrl
       });
 
-      if (res.error) {
+      if (res?.error) {
         setError(res.error);
+        return;
+      }
+
+      // If no error, redirect to the callback URL or dashboard
+      if (res?.url) {
+        window.location.href = res.url;
       } else {
-        // Force a full page reload to ensure all session data is loaded
-        window.location.href = '/dashboard';
+        window.location.href = callbackUrl;
       }
     } catch (err) {
-      setError('Error al iniciar sesión. Por favor intenta de nuevo.');
       console.error('Login error:', err);
+      setError('Ocurrió un error al iniciar sesión. Por favor, inténtalo de nuevo.');
     }
   });
 

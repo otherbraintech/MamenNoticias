@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
   title: "Mamen Noticias",
-  description: "Aplicación para aprobar o rechazar noticias de Tuto, JP Velasco y Otras noticias reelvante para su posterior descarga de pdf del boletin de noticias aprobadas",
+  description: "Aplicación para aprobar o rechazar noticias de Mamen Saavedra reelvante para su posterior descarga de pdf del boletin de noticias aprobadas",
 };
 
 export default function RootLayout({ children }) {

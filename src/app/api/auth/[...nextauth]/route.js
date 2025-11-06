@@ -5,7 +5,10 @@ import bcrypt from 'bcrypt';
 
 // Ensure NEXTAUTH_URL is set for production
 const baseUrl = process.env.NEXTAUTH_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
-const useSecureCookies = process.env.NEXTAUTH_URL?.startsWith('https://');
+const useSecureCookies = process.env.NODE_ENV === 'production';
+
+// For Vercel deployments
+const vercelUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null;
 
 export const authOptions = {
   providers: [
@@ -56,17 +59,18 @@ export const authOptions = {
   },
   cookies: {
     sessionToken: {
-      name: `${useSecureCookies ? '__Secure-' : ''}next-auth.session-token`,
+      name: `__Secure-next-auth.session-token`,
       options: {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
         secure: useSecureCookies,
-        domain: process.env.NODE_ENV === 'production' ? '.mamen-noticias.vercel.app' : undefined
+        domain: vercelUrl ? '.mamen-noticias.vercel.app' : undefined
       }
     }
   },
   debug: process.env.NODE_ENV === 'development',
+  useSecureCookies: useSecureCookies,
   callbacks: {
     async jwt({ token, user }) {
       // Add user id to the token right after sign in
@@ -85,22 +89,12 @@ export const authOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // Use the callbackUrl if it exists, otherwise redirect to dashboard
-      const callbackUrl = new URL(url, baseUrl);
-      const dashboardUrl = new URL('/dashboard', baseUrl);
-      
-      // If this is a callback URL from NextAuth, use it
-      if (url.startsWith('/') || url.startsWith(baseUrl)) {
-        return url.startsWith(baseUrl) ? url : `${baseUrl}${url}`;
-      }
-      
-      // If coming from an auth provider, check the callback URL
-      if (url.startsWith(callbackUrl.origin)) {
+      // If a callback URL is provided, use it
+      if (url.startsWith(baseUrl) || url.startsWith('/')) {
         return url;
       }
-      
-      // Default to dashboard
-      return dashboardUrl.toString();
+      // Fallback to base URL if nothing matches
+      return baseUrl;
     },
     async signIn({ user, account, profile, email, credentials }) {
       return true;
