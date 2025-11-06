@@ -60,11 +60,23 @@ export const authOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // Allows relative callback URLs
-      if (url.startsWith("/")) return `${baseUrl}${url}`
-      // Allows callback URLs on the same origin
-      else if (new URL(url).origin === baseUrl) return url
-      return baseUrl
+      // Handle relative URLs
+      if (url.startsWith('/')) {
+        // Ensure we don't redirect back to login if already authenticated
+        if (url === '/auth/login') {
+          return `${baseUrl}/dashboard`;
+        }
+        return `${baseUrl}${url}`;
+      }
+      // Handle absolute URLs
+      else if (new URL(url).origin === baseUrl) {
+        return url;
+      }
+      // Default to dashboard if no URL is provided
+      return `${baseUrl}/dashboard`;
+    },
+    async signIn({ user, account, profile, email, credentials }) {
+      return true;
     }
   }
 };
