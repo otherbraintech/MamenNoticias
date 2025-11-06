@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { usePathname } from 'next/navigation';
 
 function LoginPage() {
+  // Hooks at the top level
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -13,7 +14,15 @@ function LoginPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [error, setError] = useState(null);
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
+  
+  // Form hook at the top level
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm();
 
   // Efecto para manejar el montaje del componente
   useEffect(() => {
@@ -52,8 +61,6 @@ function LoginPage() {
     }
   }, [mounted, callbackUrl]);
 
-
-
   // Show loading state
   if (status === 'loading' || isLoading) {
     return (
@@ -62,12 +69,6 @@ function LoginPage() {
       </div>
     );
   }
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm();
-  const [error, setError] = useState(null);
 
   const onSubmit = handleSubmit(async (data) => {
     try {
