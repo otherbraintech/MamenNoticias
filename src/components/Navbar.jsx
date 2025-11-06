@@ -15,7 +15,7 @@ export default async function Navbar() {
         <Link href="/" className="flex-shrink-0">
           <Image
             src="https://i.ibb.co/S4RYMHRv/Proyecto-nuevo-18.png"
-            alt="Tuto Logo"
+            alt="Vos Logo"
             width={140}
             height={40}
             priority 
@@ -23,8 +23,8 @@ export default async function Navbar() {
         </Link>
         <Link href="/auth/login" className="flex-shrink-0">
           <Image
-            src="https://i.ibb.co/HphbQfhS/Copilot-20251106-114651-2.png"
-            alt="Tuto Logo"
+            src="https://i.ibb.co/VWTwhb0J/logo-Mamen-Noticias.png"
+            alt="Mamen Logo"
             width={140}
             height={40}
             priority 

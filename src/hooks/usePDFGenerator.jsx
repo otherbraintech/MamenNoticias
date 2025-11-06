@@ -56,37 +56,50 @@ export function usePDFGenerator(noticias) {
       const margin = 40;
       let y = margin;
 
-      // Cargar logo desde la misma URL que en el Navbar
-      const logoUrl = "https://i.ibb.co/S4RYMHRv/Proyecto-nuevo-18.png";
-      const logo = await getBase64ImageFromUrl(logoUrl);
+      // Cargar imágenes de cabecera desde URLs
+      const [logoVos, logoMamen] = await Promise.all([
+        getBase64ImageFromUrl("https://i.ibb.co/S4RYMHRv/Proyecto-nuevo-18.png"),
+        getBase64ImageFromUrl("https://i.ibb.co/VWTwhb0J/logo-Mamen-Noticias.png"),
+      ]);
 
-      // Configuración del logo en la cabecera
-      const logoWidth = 180; // Ancho del logo
-      const logoHeight = 60; // Altura proporcional
-      const logoY = y; // Posición Y del logo
+      // Configuración de los logos
+      const logoHeight = 40;
+      const logoVosWidth = 140;  // Manteniendo la proporción 140x40
+      const logoMamenWidth = 140; // Manteniendo la proporción 140x40
+      const logoY = y;
+      const spaceBetweenLogos = 20; // Espacio entre los logos
+      const totalWidth = logoVosWidth + spaceBetweenLogos + logoMamenWidth;
+      const startX = (pageWidth - totalWidth) / 2; // Centrar los logos juntos
 
-      // Agregar logo en la cabecera (izquierda)
-      if (logo) {
+      // Agregar logo Vos (izquierda)
+      if (logoVos) {
         doc.addImage(
-          logo,
+          logoVos,
           "PNG",
-          margin,
+          startX,
           logoY,
-          logoWidth,
+          logoVosWidth,
           logoHeight
         );
       }
 
-      // Estilo para los títulos de sección
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(14);
-      doc.setTextColor("#F20519"); // Color rojo para los títulos // Color rojo para coincidir con el tema
-      doc.text("Mamen Noticias", pageWidth - margin, logoY + 30, { align: "right" });
+      // Agregar logo Mamen (derecha)
+      if (logoMamen) {
+        doc.addImage(
+          logoMamen,
+          "PNG",
+          startX + logoVosWidth + spaceBetweenLogos,
+          logoY,
+          logoMamenWidth,
+          logoHeight
+        );
+      }
 
-      // Línea divisoria
-      doc.setDrawColor(242, 5, 25); // Color rojo
-      doc.setLineWidth(1);
-      doc.line(margin, logoY + logoHeight + 10, pageWidth - margin, logoY + logoHeight + 10);
+      // Título centrado en la cabecera
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(24);
+      doc.setTextColor("#12358d");
+      doc.text("Tuto Noticias", pageWidth / 2, logoY + 28, { align: "center" });
 
       // Fecha y hora centradas debajo del título
       const fechaHora = new Date().toLocaleString("es-ES", {
@@ -161,7 +174,7 @@ export function usePDFGenerator(noticias) {
       const dia = fechaActual.getDate();
       const sufijo = dia === 1 ? "ro" : "";
       const mes = meses[fechaActual.getMonth()];
-      const nombrePDF = `mamenNoticias-${dia}${sufijo} de ${mes}`;
+      const nombrePDF = `TutoNoticias-${dia}${sufijo} de ${mes}`;
 
       // Verificar si se procesó al menos una noticia
       if (noticiasProcesamientoExitoso === 0) {
