@@ -3,15 +3,32 @@ import { useState } from "react";
 import { signOut } from "next-auth/react";
 import { CiLogout } from "react-icons/ci";
 import { MdWarningAmber, MdClose } from "react-icons/md";
+import { toast } from 'sonner';
 
 export default function SignOutButton() {
   const [showModal, setShowModal] = useState(false);
 
   const handleSignOut = () => setShowModal(true);
 
-  const confirmSignOut = () => {
+  const confirmSignOut = async () => {
+    const toastId = toast.loading('Cerrando sesión...');
     setShowModal(false);
-    signOut({ callbackUrl: "/" });
+    
+    try {
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      await signOut({ 
+        redirect: false,
+        callbackUrl: "/" 
+      });
+      
+      toast.success('Sesión cerrada con éxito', { id: toastId });
+      
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+      toast.error('Error al cerrar sesión', { id: toastId });
+    }
   };
 
   const cancelSignOut = () => setShowModal(false);

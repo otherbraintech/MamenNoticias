@@ -4,6 +4,7 @@ import { signIn, useSession, getSession, signOut } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { usePathname } from 'next/navigation';
+import { Toaster, toast } from 'sonner';
 
 function LoginPage() {
   // Hooks at the top level
@@ -71,6 +72,7 @@ function LoginPage() {
   }
 
   const onSubmit = handleSubmit(async (data) => {
+    const toastId = toast.loading('Iniciando sesión...');
     try {
       setError(null);
       setIsSubmitting(true);
@@ -87,26 +89,34 @@ function LoginPage() {
       });
 
       if (result?.error) {
+        toast.error('Error al iniciar sesión', { id: toastId });
         setError(result.error);
         setIsSubmitting(false);
         return;
       }
 
-      // Forzar recarga completa de la página
-      if (result?.url) {
-        window.location.href = result.url;
-      } else {
-        window.location.href = callbackUrl;
-      }
-    } catch (err) {
-      console.error('Error en inicio de sesión:', err);
-      setError('Ocurrió un error al iniciar sesión. Por favor, inténtalo de nuevo.');
+      toast.success('¡Sesión iniciada con éxito!', { id: toastId });
+      
+      // Pequeño retraso para mostrar el mensaje de éxito
+      setTimeout(() => {
+        // Forzar recarga completa de la página
+        if (result?.url) {
+          window.location.href = result.url;
+        } else {
+          window.location.href = callbackUrl;
+        }
+      }, 1000);
+    } catch (error) {
+      console.error('Error during sign in:', error);
+      toast.error('Error al iniciar sesión', { id: toastId });
+      setError('Ocurrió un error al iniciar sesión');
       setIsSubmitting(false);
     }
   });
 
   return (
-    <div className="min-h-[calc(100vh-7rem)] flex justify-center items-center bg-white px-4">
+    <div className="min-h-[calc(100vh-7rem)] flex justify-center items-center bg-gray-50">
+      <Toaster position="top-center" richColors />
       <form
         onSubmit={onSubmit}
         className="w-full max-w-md bg-[#f5f5f5] p-8 rounded-lg shadow-lg"
