@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 export function useNews() {
   const [articulosBrutos, setArticulosBrutos] = useState([]);
@@ -15,6 +16,7 @@ export function useNews() {
   const [contador, setContador] = useState(null);
   const [horaLocal, setHoraLocal] = useState("");
   const [mostrarModalCargaNoticias, setMostrarModalCargaNoticias] = useState(false);
+  const [mensajeCargaNoticias, setMensajeCargaNoticias] = useState('Extrayendo noticias...');
 
   // Filtrar noticias por categoría
   const noticiasTuto = noticias.filter(
@@ -148,23 +150,63 @@ export function useNews() {
   async function ejecutarWebhook() {
     setEjecutandoWebhook(true);
     setWebhookError(null);
-    setMostrarModalCargaNoticias(true); // ✅ Mostrar el modal
-  
+    setMostrarModalCargaNoticias(true);
+    
+    // Mostrar notificación de carga
+    const loadingToast = toast.loading('Iniciando extracción de noticias...');
+    
     try {
-      const res = await fetch(
-        "https://political-news-n8n.af9gwe.easypanel.host/webhook/mamennoticias",
-        { method: "POST" }
+      // Iniciar el contador
+      let contador = 0;
+      const intervalo = setInterval(() => {
+        contador++;
+        const mensaje = `Extrayendo noticias... (${contador}s)`;
+        setMensajeCargaNoticias(mensaje);
+        // Actualizar notificación de carga
+        toast.loading(mensaje, { id: loadingToast });
+      }, 1000);
+      
+      // Realizar la petición al webhook de n8n sin esperar respuesta
+      const response = await fetch(
+        "https://political-news-n8n.af9gwe.easypanel.host/webhook-test/mamennoticias",
+        { 
+          method: "POST",
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ timestamp: new Date().toISOString() })
+        }
       );
-      if (!res.ok) throw new Error("Error al ejecutar el webhook");
-  
-      await esperarCambioNoticias(
-        (nuevasNoticias) => Array.isArray(nuevasNoticias) && nuevasNoticias.length > 0
-      );
+      
+      // Limpiar el intervalo cuando se complete la operación
+      clearInterval(intervalo);
+      
+      // Mostrar notificación de éxito
+      toast.success('¡Extracción de noticias completada con éxito!', { 
+        id: loadingToast,
+        duration: 5000
+      });
+      
+      return response;
+      
     } catch (err) {
-      setWebhookError("Error al ejecutar el flujo de N8N.");
+      console.error('Error en ejecutarWebhook:', err);
+      setWebhookError('Se inició la extracción de noticias en segundo plano.');
+      
+      // Mostrar notificación de error
+      toast.error('Error al iniciar la extracción de noticias', { 
+        id: loadingToast,
+        description: 'La extracción continúa en segundo plano.'
+      });
+      
+      throw err;
     } finally {
-      setEjecutandoWebhook(false);
-      setMostrarModalCargaNoticias(false); // ✅ Ocultar modal al finalizar
+      // Mantener el modal visible por al menos 2 segundos para feedback visual
+      setTimeout(() => {
+        setEjecutandoWebhook(false);
+        setMostrarModalCargaNoticias(false);
+        setMensajeCargaNoticias('Extrayendo noticias...'); // Restaurar mensaje por defecto
+      }, 2000);
     }
   }
   
