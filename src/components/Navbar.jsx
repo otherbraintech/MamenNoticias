@@ -1,12 +1,30 @@
+"use client";
+
 import Link from "next/link";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { usePathname } from 'next/navigation';
+import { getSession } from "next-auth/react";
 import { AiOutlineLogin, AiOutlineUserAdd } from "react-icons/ai";
 import SignOutButton from "./SignOutButton";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 
-export default async function Navbar() {
-  const session = await getServerSession(authOptions);
+export default function Navbar() {
+  const [session, setSession] = useState(null);
+  const pathname = usePathname();
+  const isLoginPage = pathname === '/auth/login';
+
+  useEffect(() => {
+    const loadSession = async () => {
+      const sessionData = await getSession();
+      setSession(sessionData);
+    };
+    loadSession();
+  }, []);
+
+  // Don't render the navbar on the login page
+  if (isLoginPage) {
+    return null;
+  }
 
   return (
     <nav className="bg-[#F20519] shadow-md sticky top-0 z-50">
