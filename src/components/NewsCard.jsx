@@ -19,8 +19,8 @@ export default function NewsCard({ noticia, manejarEstado, estaActualizando }) {
         <span className="font-medium">{noticia.autor || "Desconocido"}</span> el{" "}
         {new Date(noticia.fecha_publicacion ?? "").toLocaleDateString()}
       </p>
-      {tieneImagenValida && (
-        <div className="w-full mb-2 flex justify-center">
+      <div className="w-full mb-2 flex justify-center">
+        {tieneImagenValida ? (
           <Image
             src={noticia.imagen}
             alt={noticia.titulo}
@@ -35,8 +35,19 @@ export default function NewsCard({ noticia, manejarEstado, estaActualizando }) {
               setImagenCargando(false);
             }}
           />
-        </div>
-      )}
+        ) : (
+          <div className="w-full max-h-56 bg-gray-100 rounded flex items-center justify-center">
+            <Image
+              src="https://i.ibb.co/fY1sCQCV/sin-Imagen.png"
+              alt="Imagen no disponible"
+              width={200}
+              height={150}
+              className="rounded object-contain w-full max-h-56 p-4"
+              unoptimized
+            />
+          </div>
+        )}
+      </div>
       <h6 className={`text-xs font-medium text-gray-500 mb-2 ${tieneImagenValida ? 'mt-2' : 'mt-1'}`}>Resumen IA:</h6>
       <div className="flex-grow">
         <p className={`text-xs sm:text-sm text-gray-700 whitespace-pre-line ${!tieneImagenValida ? 'line-clamp-[8]' : 'line-clamp-[4]'}`}>

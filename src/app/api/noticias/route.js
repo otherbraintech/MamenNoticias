@@ -1,50 +1,20 @@
 import { PrismaClient } from "@prisma/client";
 import { DateTime } from "luxon";
+import { NextResponse } from 'next/server';
 
 const prisma = new PrismaClient();
 
-export async function GET(request) {
+export async function GET() {
   try {
     const zonaBolivia = "America/La_Paz";
-
-    const ahoraUTC = DateTime.utc();
-    const ahoraBolivia = ahoraUTC.setZone(zonaBolivia);
-
-    console.log(`[DEBUG] Hora actual Bolivia: ${ahoraBolivia.toFormat("dd/MM/yyyy HH:mm:ss")}`);
-
-    // Corte de hoy a las 08:30 AM Bolivia
-    const corteHoyBolivia = ahoraBolivia.set({
-      hour: 8,
-      minute: 30,
-      second: 0,
-      millisecond: 0,
-    });
-
-    // Mostrar solo si es después del corte de hoy
-    if (ahoraBolivia < corteHoyBolivia) {
-      console.log("[DEBUG] Antes del corte de hoy: no mostrar noticias.");
-      return new Response(JSON.stringify([]), {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "no-store, max-age=0",
-        },
-      });
-    }
 
     // Traemos todas las noticias ordenadas por fecha (desc)
     const todasNoticias = await prisma.news.findMany({
       orderBy: { created_at: "desc" },
     });
 
-    // Filtramos en memoria interpretando created_at como hora Bolivia
-    const noticiasFiltradas = todasNoticias.filter((noticia) => {
-      const fechaBolivia = DateTime.fromJSDate(noticia.created_at).setZone(zonaBolivia);
-      return fechaBolivia >= corteHoyBolivia && fechaBolivia < corteHoyBolivia.plus({ days: 1 });
-    });
-
     // Mapear para formatear las fechas
-    const noticiasConFechaFormateada = noticiasFiltradas.map((noticia) => {
+    const noticiasConFechaFormateada = todasNoticias.map((noticia) => {
       const fechaUTC = DateTime.fromJSDate(noticia.created_at).toUTC();
       const fechaBolivia = fechaUTC.setZone(zonaBolivia);
 
@@ -58,20 +28,16 @@ export async function GET(request) {
 
     console.log(`[DEBUG] Noticias encontradas: ${noticiasConFechaFormateada.length}`);
 
-    return new Response(JSON.stringify(noticiasConFechaFormateada), {
+    return NextResponse.json(noticiasConFechaFormateada, {
       status: 200,
       headers: {
-        "Content-Type": "application/json",
-        "Cache-Control": "no-store, max-age=0",
+        'Content-Type': 'application/json',
       },
     });
   } catch (error) {
-    console.error("[ERROR] En GET /api/noticias:", error);
-    return new Response(
-      JSON.stringify({
-        error: "Error al obtener noticias",
-        details: error.message,
-      }),
+    console.error('Error al obtener noticias:', error);
+    return NextResponse.json(
+      { error: 'Error al obtener noticias' },
       { status: 500 }
     );
   }
@@ -83,9 +49,9 @@ export async function PUT(request) {
     const { id, estado } = body;
 
     if (!id || !estado) {
-      return new Response(
-        JSON.stringify({ error: "Faltan campos: 'id' o 'estado'" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+      return NextResponse.json(
+        { error: "Faltan campos: 'id' o 'estado'" },
+        { status: 400 }
       );
     }
 
@@ -94,13 +60,10 @@ export async function PUT(request) {
       data: { estado },
     });
 
-    return new Response(JSON.stringify(noticiaActualizada), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    return NextResponse.json(noticiaActualizada, { status: 200 });
   } catch (error) {
-    return new Response(
-      JSON.stringify({ error: "Error al actualizar noticia", detail: error.message }),
+    return NextResponse.json(
+      { error: "Error al actualizar noticia", detail: error.message },
       { status: 500 }
     );
   }

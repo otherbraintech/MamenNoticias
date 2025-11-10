@@ -34,7 +34,7 @@ export default function ActionButtons({
         <button
           onClick={generarBoletin}
           disabled={generando || !!errorGen}
-          className={`w-[220px] sm:w-[210px] min-h-[40px] sm:min-h-[44px] min-w-[100px] flex items-center justify-center gap-1 bg-[#123488] text-white px-2 py-1 sm:px-3 sm:py-1 rounded-md hover:bg-[#0f2c6b] disabled:opacity-50 transition text-sm sm:text-sm ${errorGen ? 'bg-red-500 hover:bg-red-600' : ''}`}
+          className={`w-[220px] sm:w-[210px] min-h-[40px] sm:min-h-[44px] min-w-[100px] flex items-center justify-center gap-1 bg-sky-600 text-white px-2 py-1 sm:px-3 sm:py-1 rounded-md hover:bg-sky-800 disabled:opacity-50 transition text-sm sm:text-sm ${errorGen ? 'bg-red-500 hover:bg-red-600' : ''}`}
         >
           {generando ? (
             "Generando PDF..."
@@ -49,7 +49,7 @@ export default function ActionButtons({
         <button
           onClick={ejecutarWebhook}
           disabled={ejecutandoWebhook || !!webhookError || (hayNoticias && contador !== null)}
-          className={`w-[150px] sm:w-[210px] min-h-[40px] sm:min-h-[44px] min-w-[100px] flex flex-col items-center justify-center gap-1 bg-red-600 text-white px-2 py-1 sm:px-3 sm:py-1 rounded-md hover:bg-red-700 disabled:opacity-50 transition text-sm sm:text-sm relative ${webhookError ? 'bg-red-500 hover:bg-red-600' : ''}`}
+          className={`w-[150px] sm:w-[210px] min-h-[40px] sm:min-h-[44px] min-w-[100px] flex flex-col items-center justify-center gap-1 bg-sky-600 text-white px-2 py-1 sm:px-3 sm:py-1 rounded-md hover:bg-sky-800 disabled:opacity-50 transition text-sm sm:text-sm relative ${webhookError ? 'bg-red-500 hover:bg-red-600' : ''}`}
         >
           {hayNoticias && contador !== null ? (
             <>

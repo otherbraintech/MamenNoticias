@@ -18,17 +18,7 @@ export function useNews() {
   const [mostrarModalCargaNoticias, setMostrarModalCargaNoticias] = useState(false);
   const [mensajeCargaNoticias, setMensajeCargaNoticias] = useState('Extrayendo noticias...');
 
-  // Filtrar noticias por categoría
-  const noticiasTuto = noticias.filter(
-    (n) => (n.categoria || "").toUpperCase() === "TUTO"
-  );
-  const noticiasJP = noticias.filter(
-    (n) => (n.categoria || "").toUpperCase() === "JP"
-  );
-  const noticiasOtros = noticias.filter((n) => {
-    const cat = (n.categoria || "").toUpperCase();
-    return cat !== "TUTO" && cat !== "JP";
-  });
+  // Todas las noticias juntas
   const hayNoticias = noticias.length > 0;
 
   useEffect(() => {
@@ -44,15 +34,52 @@ export function useNews() {
   useEffect(() => {
     let interval;
     async function fetchNoticias() {
-      const res = await fetch("/api/noticias");
-      let data = await res.json();
-      if (!Array.isArray(data)) data = [];
-      setNoticias(data);
-      setLoading(false);
+      try {
+        const res = await fetch("/api/noticias", {
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache'
+          }
+        });
+        
+        if (!res.ok) {
+          throw new Error(`Error ${res.status}: ${res.statusText}`);
+        }
+        
+        let data = await res.json();
+        if (!Array.isArray(data)) data = [];
+        
+        // Filtrar noticias del día actual (Bolivia time)
+        const hoyBolivia = new Date();
+        hoyBolivia.setHours(0, 0, 0, 0); // Inicio del día actual
+        
+        const noticiasHoy = data.filter(noticia => {
+          if (!noticia.created_at) return false;
+          const fechaNoticia = new Date(noticia.created_at);
+          return fechaNoticia >= hoyBolivia;
+        });
+        
+        setNoticias(noticiasHoy);
+      } catch (error) {
+        console.error("Error fetching news:", error);
+        setNoticias([]);
+      } finally {
+        setLoading(false);
+      }
     }
     async function fetchArticulosBrutos() {
       try {
-        const res = await fetch("/api/articulos-brutos");
+        const res = await fetch("/api/articulos-brutos", {
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache'
+          }
+        });
+        
+        if (!res.ok) {
+          throw new Error(`Error ${res.status}: ${res.statusText}`);
+        }
+        
         let data = await res.json();
         if (!Array.isArray(data)) data = [];
         setArticulosBrutos(data);
@@ -260,9 +287,6 @@ export function useNews() {
     noticias,
     articulosBrutos,
     loading,
-    noticiasTuto,
-    noticiasJP,
-    noticiasOtros,
     ejecutarWebhook,
     manejarEstado,
     actualizandoEstado,
@@ -272,11 +296,9 @@ export function useNews() {
     mostrarModalCargaNoticias,
     timer,
     noNews,
-    intentosSinNoticias,
     webhookError,
     contador,
     horaLocal,
-    hayNoticias,
-    mostrarModalCargaNoticias,
+    hayNoticias
   };
 }

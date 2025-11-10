@@ -1,28 +1,28 @@
 import { PrismaClient } from "@prisma/client";
+import { NextResponse } from 'next/server';
 
 const prisma = new PrismaClient();
 
-export async function GET(request) {
+export async function GET() {
   try {
     const articulosBrutos = await prisma.articuloBruto.findMany({
       orderBy: { creado: "desc" }
     });
 
-    return new Response(JSON.stringify(articulosBrutos), {
+    return NextResponse.json(articulosBrutos, {
       status: 200,
       headers: {
-        "Content-Type": "application/json",
         "Cache-Control": "no-store, max-age=0"
       }
     });
 
   } catch (error) {
-    console.error("[ERROR] En GET /api/articulos-brutos:", error);
-    return new Response(
-      JSON.stringify({ 
+    console.error("Error al obtener artículos brutos:", error);
+    return NextResponse.json(
+      { 
         error: "Error al obtener artículos brutos", 
         details: error.message 
-      }),
+      },
       { status: 500 }
     );
   }
@@ -34,9 +34,9 @@ export async function POST(request) {
     const { url } = body;
 
     if (!url) {
-      return new Response(
-        JSON.stringify({ error: "Falta el campo 'url'" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+      return NextResponse.json(
+        { error: "Falta el campo 'url'" },
+        { status: 400 }
       );
     }
 
@@ -44,19 +44,16 @@ export async function POST(request) {
       data: { url }
     });
 
-    return new Response(JSON.stringify(articuloBruto), {
-      status: 201,
-      headers: { "Content-Type": "application/json" }
-    });
+    return NextResponse.json(articuloBruto, { status: 201 });
 
   } catch (error) {
-    console.error("[ERROR] En POST /api/articulos-brutos:", error);
-    return new Response(
-      JSON.stringify({ 
+    console.error("Error al crear artículo bruto:", error);
+    return NextResponse.json(
+      { 
         error: "Error al crear artículo bruto", 
         details: error.message 
-      }),
-      { status: 500 }
+      },
+      { status: 400 }
     );
   }
 }
@@ -67,9 +64,9 @@ export async function PUT(request) {
     const { id, estado } = body;
 
     if (!id || !estado) {
-      return new Response(
-        JSON.stringify({ error: "Faltan campos: 'id' o 'estado'" }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
+      return NextResponse.json(
+        { error: "Faltan campos: 'id' o 'estado'" },
+        { status: 400 }
       );
     }
 
@@ -78,18 +75,15 @@ export async function PUT(request) {
       data: { estado }
     });
 
-    return new Response(JSON.stringify(articuloBruto), {
-      status: 200,
-      headers: { "Content-Type": "application/json" }
-    });
+    return NextResponse.json(articuloBruto, { status: 200 });
 
   } catch (error) {
-    console.error("[ERROR] En PUT /api/articulos-brutos:", error);
-    return new Response(
-      JSON.stringify({ 
+    console.error("Error al actualizar artículo bruto:", error);
+    return NextResponse.json(
+      { 
         error: "Error al actualizar artículo bruto", 
         details: error.message 
-      }),
+      },
       { status: 500 }
     );
   }

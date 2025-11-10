@@ -8,21 +8,85 @@ export function usePDFGenerator(noticias) {
   const [mostrarModal, setMostrarModal] = useState(false);
   const [pdfPendiente, setPdfPendiente] = useState(null);
 
+  // Función mejorada para obtener imágenes con mejor manejo de errores
   async function getBase64ImageFromUrl(imageUrl) {
+    // Validación más estricta de la URL
+    const isValidUrl = imageUrl && 
+                      typeof imageUrl === 'string' && 
+                      imageUrl.trim() !== '' && 
+                      (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'));
+    
+    // Si la URL no es válida, usar imagen por defecto inmediatamente
+    if (!isValidUrl) {
+      console.log('URL de imagen inválida o faltante, usando imagen por defecto');
+      return await getFallbackImage();
+    }
+
     try {
       const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(imageUrl)}`;
-      const response = await fetch(proxyUrl);
-      if (!response.ok) throw new Error("No se pudo cargar imagen");
-      const blob = await response.blob();
+      console.log('Intentando cargar imagen:', imageUrl);
+      
+      // Timeout para evitar esperas largas
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 segundos timeout
+      
+      const response = await fetch(proxyUrl, {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
 
-      return await new Promise((resolve) => {
+      if (!response.ok) {
+        console.error('Error en la respuesta del servidor:', response.status, response.statusText);
+        throw new Error(`Error ${response.status}: No se pudo cargar imagen`);
+      }
+      
+      const blob = await response.blob();
+      
+      // Verificar que el blob no esté vacío y sea una imagen
+      if (blob.size === 0) {
+        throw new Error("Imagen vacía o corrupta");
+      }
+
+      return await new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = () => resolve(null);
+        reader.onloadend = () => {
+          console.log('Imagen cargada exitosamente:', imageUrl);
+          resolve(reader.result);
+        };
+        reader.onerror = () => {
+          console.error('Error al leer el blob de la imagen:', imageUrl);
+          reject(new Error("Error al procesar imagen"));
+        };
         reader.readAsDataURL(blob);
       });
     } catch (error) {
-      console.error(error);
+      console.error("Error al cargar la imagen:", error);
+      // En caso de cualquier error, devolver la imagen por defecto
+      return await getFallbackImage();
+    }
+  }
+
+  // Función mejorada para obtener la imagen de respaldo
+  async function getFallbackImage() {
+    try {
+      const fallbackUrl = "https://i.ibb.co/fY1sCQCV/sin-Imagen.png";
+      console.log('Cargando imagen por defecto:', fallbackUrl);
+      
+      const response = await fetch(`/api/proxy-image?url=${encodeURIComponent(fallbackUrl)}`);
+      if (!response.ok) throw new Error("No se pudo cargar imagen de respaldo");
+      
+      const blob = await response.blob();
+      
+      return await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error("Error al leer imagen de respaldo"));
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error("Error al cargar la imagen de respaldo:", error);
+      // Si incluso la imagen de respaldo falla, devolver null
       return null;
     }
   }
@@ -32,10 +96,21 @@ export function usePDFGenerator(noticias) {
     setErrorGen(null);
 
     try {
-      const res = await fetch("/api/noticias");
-      if (!res.ok)
-        throw new Error("Error al obtener noticias desde la base de datos");
+      const res = await fetch("/api/noticias", {
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        }
+      });
+      
+      if (!res.ok) {
+        throw new Error(`Error ${res.status}: No se pudo obtener las noticias desde la base de datos`);
+      }
+      
       const data = await res.json();
+      if (!Array.isArray(data)) {
+        throw new Error("Formato de datos de noticias inválido");
+      }
 
       const noticiasAprobadas = data.filter(
         (n) => n.estado?.toLowerCase() === "aprobado"
@@ -53,55 +128,55 @@ export function usePDFGenerator(noticias) {
       const doc = new jsPDF({ unit: "pt", format: "a4" });
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
-      const margin = 40;
+      const margin = 15;
       let y = margin;
 
-      // Cargar imágenes de cabecera desde URLs
-      const [logoVos, logoMamen] = await Promise.all([
-        getBase64ImageFromUrl("https://i.ibb.co/S4RYMHRv/Proyecto-nuevo-18.png"),
-        getBase64ImageFromUrl("https://i.ibb.co/VWTwhb0J/logo-Mamen-Noticias.png"),
-      ]);
+      // ====== FRANJAS DE COLOR EN CABECERA ======
+      const franja1Height = 8; // Primera franja más gruesa (azul)
+      const franja2Height = 16;  // Segunda franja más delgada (roja)
+      
+      // Asegurarse de que no hay margen superior para las franjas
+      y = 0;
+      
+      // Primera franja: #05DBF2 (azul) - más gruesa
+      doc.setFillColor(5, 219, 242); // #05DBF2
+      doc.rect(0, y, pageWidth, franja1Height, "F");
+      
+      // Segunda franja: #F20C36 (rojo) - más delgada
+      doc.setFillColor(242, 12, 54); // #F20C36
+      doc.rect(0, y + franja1Height, pageWidth, franja2Height, "F");
+      
+      // Ajustar posición Y después de las franjas
+      y = (franja1Height + franja2Height) + 20; // Espacio adicional después de las franjas
 
-      // Configuración de los logos
-      const logoHeight = 40;
-      const logoVosWidth = 140;  // Manteniendo la proporción 140x40
-      const logoMamenWidth = 140; // Manteniendo la proporción 140x40
-      const logoY = y;
-      const spaceBetweenLogos = 20; // Espacio entre los logos
-      const totalWidth = logoVosWidth + spaceBetweenLogos + logoMamenWidth;
-      const startX = (pageWidth - totalWidth) / 2; // Centrar los logos juntos
-
-      // Agregar logo Vos (izquierda)
-      if (logoVos) {
-        doc.addImage(
-          logoVos,
-          "PNG",
-          startX,
-          logoY,
-          logoVosWidth,
-          logoHeight
-        );
+      // Cargar el logo de Mamen Noticias con manejo de errores
+      let logoMamen = null;
+      try {
+        logoMamen = await getBase64ImageFromUrl("https://i.ibb.co/VpJkJfKx/logo-Mamen-Noticias-1.png");
+      } catch (error) {
+        console.error("Error cargando logo Mamen Noticias:", error);
+        // Continuar sin logo si hay error
       }
 
-      // Agregar logo Mamen (derecha)
+      // Configuración del logo - más alto y menos ancho
+      const logoWidth = 130; // Reducir el ancho
+      const logoHeight = 70; // Aumentar la altura
+      const logoY = y;
+      const logoX = (pageWidth - logoWidth) / 2; // Centrar el logo horizontalmente
+
+      // Agregar logo Mamen Noticias (centrado) si se cargó correctamente
       if (logoMamen) {
         doc.addImage(
           logoMamen,
           "PNG",
-          startX + logoVosWidth + spaceBetweenLogos,
+          logoX,
           logoY,
-          logoMamenWidth,
+          logoWidth,
           logoHeight
         );
       }
 
-      // Título centrado en la cabecera
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(24);
-      doc.setTextColor("#12358d");
-      doc.text("Tuto Noticias", pageWidth / 2, logoY + 28, { align: "center" });
-
-      // Fecha y hora centradas debajo del título
+      // Fecha y hora centradas más abajo
       const fechaHora = new Date().toLocaleString("es-ES", {
         dateStyle: "full",
         timeStyle: "short",
@@ -109,9 +184,11 @@ export function usePDFGenerator(noticias) {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(12);
       doc.setTextColor("#6c757d");
-      doc.text(fechaHora, pageWidth / 2, logoY + 45, { align: "center" });
+      doc.text(fechaHora, pageWidth / 2, logoY + logoHeight + 15, { align: "center" });
 
-      y += headerHeight + 35; // Espacio después de la cabecera
+      // Calcular la altura total del encabezado
+      const headerHeight = logoY + logoHeight + 10; // Ajustar el espacio después del logo y fecha
+      y = headerHeight + 25; // Actualizar la posición Y para el contenido principal
 
       // Primera página: máximo 2 noticias
       let noticiasEnPrimeraPagina = Math.min(noticiasAprobadas.length, 2);
@@ -174,7 +251,7 @@ export function usePDFGenerator(noticias) {
       const dia = fechaActual.getDate();
       const sufijo = dia === 1 ? "ro" : "";
       const mes = meses[fechaActual.getMonth()];
-      const nombrePDF = `TutoNoticias-${dia}${sufijo} de ${mes}`;
+      const nombrePDF = `MamenNoticias-${dia}${sufijo} de ${mes}`;
 
       // Verificar si se procesó al menos una noticia
       if (noticiasProcesamientoExitoso === 0) {
@@ -212,7 +289,6 @@ export function usePDFGenerator(noticias) {
     const boxWidth = pageWidth - margin * 2;
     const padding = 15;
     let cursorY = y + padding;
-    let tieneImagenValida = false; // Variable para rastrear si se procesó una imagen
 
     // Estilo de la caja
     doc.setDrawColor("#e0e0e0");
@@ -240,10 +316,10 @@ export function usePDFGenerator(noticias) {
     doc.text(metaText, margin + padding, cursorY);
     cursorY += 18;
 
-    // Título con validación
+    // Título con validación - CAMBIO DE COLOR AQUÍ
     doc.setFont("helvetica", "bold");
     doc.setFontSize(13);
-    doc.setTextColor("#12358d");
+    doc.setTextColor("#F20C36"); // Cambiado de "#12358d" a "#F20C36" (skyblue)
     
     let tituloSeguro = noticia.titulo.trim();
     if (tituloSeguro.length > 200) {
@@ -254,76 +330,107 @@ export function usePDFGenerator(noticias) {
     doc.text(titleLines, margin + padding, cursorY);
     cursorY += titleLines.length * 18;
 
-    // Imagen expandida casi a todo el ancho con manejo robusto de errores
-    if (noticia.imagen && typeof noticia.imagen === 'string' && noticia.imagen.trim()) {
-      try {
-        const imgData = await getBase64ImageFromUrl(noticia.imagen);
-        if (imgData) {
-          // Deja solo un pequeño margen a los lados
-          const sideMargin = 12;
-          const maxImgWidth = boxWidth - sideMargin * 2;
-          const imgObj = document.createElement("img");
-          imgObj.src = imgData;
-          
-          await new Promise((resolve, reject) => {
-            imgObj.onload = resolve;
-            imgObj.onerror = () => reject(new Error("Error cargando imagen"));
-            // Timeout para evitar esperas infinitas
-            setTimeout(() => reject(new Error("Timeout cargando imagen")), 5000);
-          });
-          
-          // Validar dimensiones de imagen
-          if (!imgObj.naturalWidth || !imgObj.naturalHeight || imgObj.naturalWidth <= 0 || imgObj.naturalHeight <= 0) {
-            throw new Error("Dimensiones de imagen inválidas");
-          }
-          
-          const ratio = imgObj.naturalHeight / imgObj.naturalWidth;
-          let imgWidth = maxImgWidth;
-          let imgHeight = imgWidth * ratio;
-          
-          // Ajuste de tamaño
-          if (isCompact) {
-            imgHeight = Math.min(imgHeight, 100);
-          } else {
-            imgHeight = Math.min(imgHeight, 170);
-          }
-          imgWidth = imgHeight / ratio;
-          // Si la imagen es demasiado ancha, recorta al máximo permitido
-          if (imgWidth > maxImgWidth) imgWidth = maxImgWidth;
-          
-          // Validar que las dimensiones finales sean válidas
-          if (imgWidth <= 0 || imgHeight <= 0 || !isFinite(imgWidth) || !isFinite(imgHeight)) {
-            throw new Error("Dimensiones calculadas inválidas");
-          }
-          
-          // Centrado horizontal
-          const imgX = margin + sideMargin + (maxImgWidth - imgWidth) / 2;
-          // Marco para la imagen (sutil sombra)
-          doc.setFillColor("#f8fafc");
-          doc.roundedRect(
-            imgX - 4,
-            cursorY - 4,
-            imgWidth + 8,
-            imgHeight + 8,
-            8,
-            8,
-            "F"
-          );
-          doc.addImage(
-            imgData,
-            "PNG",
-            imgX,
-            cursorY,
-            imgWidth,
-            imgHeight
-          );
-          cursorY += imgHeight + 18;
-          tieneImagenValida = true; // Marcar que se procesó una imagen exitosamente
-        }
-      } catch (error) {
-        console.warn(`Error procesando imagen para noticia ${noticia.id || 'desconocido'}:`, error);
-        // Continuar sin imagen en lugar de fallar toda la noticia
+    // MEJORA PRINCIPAL: Manejo robusto de imágenes
+    let imagenProcesada = false;
+    let alturaImagen = 0;
+
+    // Siempre intentar cargar una imagen (ya sea la original o la por defecto)
+    try {
+      let imagenUrl = noticia.imagen;
+      
+      // Validar URL de imagen
+      const isValidImageUrl = imagenUrl && 
+                            typeof imagenUrl === 'string' && 
+                            imagenUrl.trim() !== '' && 
+                            (imagenUrl.startsWith('http://') || imagenUrl.startsWith('https://'));
+      
+      // Si la URL no es válida, usar imagen por defecto
+      if (!isValidImageUrl) {
+        console.log(`URL de imagen inválida para noticia ${noticia.id}, usando imagen por defecto`);
+        imagenUrl = "https://i.ibb.co/fY1sCQCV/sin-Imagen.png";
       }
+
+      const imgData = await getBase64ImageFromUrl(imagenUrl);
+      
+      if (imgData) {
+        // Deja solo un pequeño margen a los lados
+        const sideMargin = 12;
+        const maxImgWidth = boxWidth - sideMargin * 2;
+        
+        // Crear elemento imagen para obtener dimensiones
+        const imgObj = new Image();
+        imgObj.src = imgData;
+        
+        await new Promise((resolve, reject) => {
+          imgObj.onload = () => {
+            try {
+              // Calcular dimensiones manteniendo la relación de aspecto
+              const imgAspectRatio = imgObj.width / imgObj.height;
+              let imgWidth = maxImgWidth;
+              let imgHeight = imgWidth / imgAspectRatio;
+              
+              // Si la imagen es muy alta, limitar su altura
+              const maxImgHeight = isCompact ? 120 : 200;
+              if (imgHeight > maxImgHeight) {
+                imgHeight = maxImgHeight;
+                imgWidth = imgHeight * imgAspectRatio;
+              }
+              
+              // Asegurarse de que la imagen no sea más ancha que el máximo permitido
+              if (imgWidth > maxImgWidth) {
+                imgWidth = maxImgWidth;
+                imgHeight = imgWidth / imgAspectRatio;
+              }
+              
+              // Calcular posición X para centrar la imagen
+              const imgX = (pageWidth - imgWidth) / 2;
+              
+              // Agregar espacio antes de la imagen
+              cursorY += 5;
+              
+              // Marco para la imagen (sutil sombra)
+              doc.setFillColor("#f8fafc");
+              doc.roundedRect(
+                imgX - 4,
+                cursorY - 4,
+                imgWidth + 8,
+                imgHeight + 8,
+                8,
+                8,
+                "F"
+              );
+              
+              // Agregar la imagen al PDF
+              doc.addImage(
+                imgData,
+                'JPEG',
+                imgX,
+                cursorY,
+                imgWidth,
+                imgHeight
+              );
+              
+              // Actualizar la posición Y después de la imagen
+              alturaImagen = imgHeight + 18;
+              cursorY += alturaImagen;
+              imagenProcesada = true;
+              resolve();
+            } catch (error) {
+              console.error("Error al agregar imagen al PDF:", error);
+              resolve(); // Continuar sin la imagen
+            }
+          };
+          imgObj.onerror = () => {
+            console.error("Error al cargar imagen para dimensiones");
+            resolve(); // Continuar sin la imagen
+          };
+          // Timeout para evitar esperas infinitas
+          setTimeout(resolve, 3000);
+        });
+      }
+    } catch (error) {
+      console.warn(`Error procesando imagen para noticia ${noticia.id || 'desconocido'}:`, error);
+      // Continuar sin imagen - la imagen por defecto ya debería haberse cargado
     }
 
     // Resumen (limitado para evitar solapamiento) con validación
@@ -346,7 +453,7 @@ export function usePDFGenerator(noticias) {
     
     let resumenLines = doc.splitTextToSize(resumenMostrar, boxWidth - padding * 2);
     // Ajustar número de líneas según si tiene imagen o no
-    const maxResumenLines = tieneImagenValida ? 5 : 8; // Más líneas si no hay imagen
+    const maxResumenLines = imagenProcesada ? 5 : 8; // Más líneas si no hay imagen
     if (resumenLines.length > maxResumenLines) {
       resumenLines = resumenLines.slice(0, maxResumenLines);
       resumenLines[maxResumenLines - 1] += " ...";
@@ -357,7 +464,7 @@ export function usePDFGenerator(noticias) {
     // Leer más con validación de URL
     doc.setFont("helvetica", "normal");
     doc.setFontSize(11);
-    doc.setTextColor("#da0b0a");
+    doc.setTextColor("#05DBF2");
     
     let urlSegura = "#";
     try {
@@ -377,7 +484,7 @@ export function usePDFGenerator(noticias) {
     let boxHeightReal;
     if (isCompact) {
       // Para modo compacto, ajustar según si tiene imagen
-      boxHeightReal = tieneImagenValida ? 260 : 180; // Más pequeña sin imagen
+      boxHeightReal = imagenProcesada ? 260 : 180; // Más pequeña sin imagen
     } else {
       // Para modo normal, usar altura real del contenido
       boxHeightReal = cursorY - y + padding;
@@ -388,7 +495,7 @@ export function usePDFGenerator(noticias) {
     doc.roundedRect(margin, y, boxWidth, boxHeightReal, 12, 12, "S");
 
     // Espaciado después de la caja también ajustado
-    const espaciadoDespues = tieneImagenValida ? (isCompact ? 5 : 20) : (isCompact ? 3 : 15);
+    const espaciadoDespues = imagenProcesada ? (isCompact ? 5 : 20) : (isCompact ? 3 : 15);
     return y + boxHeightReal + espaciadoDespues;
   }
 

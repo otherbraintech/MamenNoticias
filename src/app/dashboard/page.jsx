@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import NewsSection from "@/components/NewsSection";
 import ActionButtons from "@/components/ActionButtons";
-import Filters from "@/components/Filters";
 import Timer from "@/components/Timer";
 import LoadingModal from "@/components/LoadingModal";
 import { useNews } from "@/hooks/useNews";
@@ -13,9 +12,6 @@ export default function HomePage() {
   const {
     noticias,
     loading,
-    noticiasTuto,
-    noticiasJP,
-    noticiasOtros,
     ejecutarWebhook,
     manejarEstado,
     actualizandoEstado,
@@ -25,12 +21,11 @@ export default function HomePage() {
     mostrarModalCargaNoticias,
     timer,
     noNews,
-    intentosSinNoticias,
     webhookError,
     contador,
     horaLocal,
     hayNoticias,
-    articulosBrutos, // <-- nuevo
+    articulosBrutos,
   } = useNews();
 
   const { 
@@ -42,8 +37,6 @@ export default function HomePage() {
     confirmarYDescargar,
     cerrarModal
   } = usePDFGenerator(noticias);
-
-  const [activeSection, setActiveSection] = useState("all");
 
   // Estado para manejar errores combinados
   const errorMessage = errorGen || webhookError;
@@ -96,18 +89,8 @@ export default function HomePage() {
       return;
     }
     function actualizarMensaje() {
-      const ahora = new Date();
-      const diffMs = ahora - fechaUltima;
-      const diffMin = diffMs / 1000 / 60;
-      if (diffMin < 3) {
-        setMensajeExtraccion(
-          "Las últimas noticias relevantes ya están siendo procesadas y se visualizarán pronto en pantalla."
-        );
-      } else {
-        setMensajeExtraccion(
-          "Ya se han extraído y filtrado las noticias para hoy"
-        );
-      }
+      // No mostrar ningún mensaje de procesamiento
+      setMensajeExtraccion("");
     }
     actualizarMensaje();
     const interval = setInterval(actualizarMensaje, 10000); // Actualiza cada 10s
@@ -165,32 +148,25 @@ export default function HomePage() {
     <main className="max-w-5xl mx-auto px-4 sm:px-6 py-2 sm:py-4 bg-white">
       <header className="w-full mb-3">
         <div className="rounded-2xl px-4 py-2 flex flex-col items-center justify-center bg-white shadow">
-          <h1 className="text-3xl font-extrabold sm:text-5xl text-blue-900 text-center mb-1 flex items-center gap-2 tracking-wider">
-            <span className="text-red-600 font-extrabold">TUTO</span> NOTICIAS
+          <h1 className="text-3xl font-extrabold sm:text-5xl text-sky-400 text-center mb-1 flex items-center gap-2 tracking-wider">
+            <span className="text-red-600 font-extrabold">MAMEN</span> NOTICIAS
             <span className="w-5 h-5 bg-red-600 rounded-full animate-pulse ml-1"></span>
           </h1>
-          <span className="text-gray-700 text-base font-light mb-2 text-center">
-            Gestiona y aprueba noticias relevantes antes de generar tu boletín
-            en PDF.
+          <span className="text-gray-700 text-base font-light mb-4 text-center">
+            Gestiona y aprueba noticias relevantes antes de generar tu boletín en PDF.
           </span>
-          <div className="w-full flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
-            <div className="sm:w-1/2 flex justify-start">
-              <Filters
-                activeSection={activeSection}
-                setActiveSection={setActiveSection}
-              />
-            </div>
-            <div className="sm:w-1/2 flex justify-end">
-              <ActionButtons
-                ejecutarWebhook={ejecutarWebhook}
-                generarBoletin={generarBoletin}
-                ejecutandoWebhook={ejecutandoWebhook || waiting}
-                generando={generando}
-                hayNoticias={hayNoticias}
-                contador={contador}
-                showFullButtons
-              />
-            </div>
+          <div className="w-full flex justify-center">
+            <ActionButtons
+              ejecutarWebhook={ejecutarWebhook}
+              generarBoletin={generarBoletin}
+              ejecutandoWebhook={ejecutandoWebhook || waiting}
+              generando={generando}
+              hayNoticias={hayNoticias}
+              contador={contador}
+              errorGen={errorGen}
+              webhookError={webhookError}
+              showFullButtons={true}
+            />
           </div>
           {hayNoticias && mensajeExtraccion && (
             <div
@@ -211,48 +187,37 @@ export default function HomePage() {
         <div className="mb-4 p-3 bg-red-50 rounded-md">
           <p className="text-red-600">{errorMessage}</p>
         </div>
-      )}       
-      <div className="flex justify-center items-center text-xl  mb-2 text-black font-semibold">
-      Noticias Extraídas: {noticias.length}
-    </div>
+      )}
+      <div className="flex justify-center items-center text-xl mb-6 text-black font-semibold">
+        Noticias Extraídas: {noticias.length}
+      </div>
 
-      {/* Sección Tuto Quiroga */}
-      <SectionWrapper activeSection={activeSection} section="tuto">
-        {/* Noticias Extraídas antes de la sección Tuto Quiroga */}
- 
-        <NewsSection
-          title="Noticias mencionando a: Tuto Quiroga"
-          noticias={noticiasTuto}
-          colorClass="text-[#123488]"
-          manejarEstado={manejarEstado}
-          actualizandoEstado={actualizandoEstado}
-          noNewsMessage="Hoy no hay noticias donde mencionan a Tuto Quiroga."
-        />
-      </SectionWrapper>
+      {/* Mostrar noticias de Mamen Saavedra */}
+      <NewsSection
+        title="Mencionando a Mamen Saavedra"
+        noticias={noticias.filter(noticia => 
+          noticia.categoria && 
+          noticia.categoria.toUpperCase() === 'MAMEN'
+        )}
+        colorClass="text-[#123488]"
+        manejarEstado={manejarEstado}
+        actualizandoEstado={actualizandoEstado}
+        noNewsMessage="No hay noticias que mencionen a Mamen Saavedra."
+      />
 
-      {/* Sección Juan Pablo Velasco */}
-      <SectionWrapper activeSection={activeSection} section="jp">
-        <NewsSection
-          title="Noticias mencionando a: Juan Pablo Velasco"
-          noticias={noticiasJP}
-          colorClass="text-[#da0b0a]"
-          manejarEstado={manejarEstado}
-          actualizandoEstado={actualizandoEstado}
-          noNewsMessage="Hoy no hay noticias donde mencionan a Juan Pablo Velasco."
-        />
-      </SectionWrapper>
-
-      {/* Sección Otras Noticias */}
-      <SectionWrapper activeSection={activeSection} section="otros">
-        <NewsSection
-          title="Otros Temas"
-          noticias={noticiasOtros}
-          colorClass="text-gray-700"
-          manejarEstado={manejarEstado}
-          actualizandoEstado={actualizandoEstado}
-          noNewsMessage="No hay noticias cargadas."
-        />
-      </SectionWrapper>
+      {/* Mostrar noticias de Otros */}
+      <NewsSection
+        title="Otras noticias"
+        noticias={noticias.filter(noticia => 
+          !noticia.categoria || 
+          noticia.categoria.toUpperCase() === 'OTROS' ||
+          noticia.categoria.toUpperCase() === 'OTRO'
+        )}
+        colorClass="text-[#666666]"
+        manejarEstado={manejarEstado}
+        actualizandoEstado={actualizandoEstado}
+        noNewsMessage="No hay otras noticias para mostrar."
+      />
 
       {showModal && <LoadingModal timer={timer} />}
       
@@ -305,10 +270,4 @@ export default function HomePage() {
   );
 }
 
-// Componente auxiliar para manejar la lógica de secciones
-function SectionWrapper({ activeSection, section, children }) {
-  if (activeSection !== "all" && activeSection !== section) {
-    return null;
-  }
-  return children;
-}
+

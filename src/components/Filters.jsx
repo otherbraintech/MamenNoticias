@@ -8,8 +8,8 @@ export default function Filters({ activeSection, setActiveSection }) {
         className="ml-2 px-3 py-2 rounded-md border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white shadow-sm"
       >
         <option value="all">Todas</option>
-        <option value="tuto">Tuto Quiroga</option>
-        <option value="jp">Juan Pablo Velasco</option>
+        <option value="tuto">Mamen Saavedra</option>
+        <option value="jp">Mamen Saavedra</option>
         <option value="otros">Otras Noticias</option>
       </select>
     </div>
