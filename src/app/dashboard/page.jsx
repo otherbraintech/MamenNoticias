@@ -132,9 +132,6 @@ export default function HomePage() {
   if (!loading && noticias.length === 0) {
     return (
       <main className="flex-1 flex flex-col justify-center items-center px-4 py-10 bg-white max-w-4xl mx-auto w-full">
-        <h1 className="text-3xl font-bold mb-6 text-center px-4">
-          ¡Bienvenido! a MamenNoticias
-        </h1>
         <p className="text-gray-500 text-lg mb-6 text-center font-semibold max-w-xl">
           Aun no se rastrearon noticias para hoy. Podés comenzar buscando noticias anteriores, haciendo clic aquí abajo.
         </p>
