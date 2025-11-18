@@ -4,7 +4,7 @@ import { signIn, useSession, getSession, signOut } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { usePathname } from 'next/navigation';
-import { Toaster, toast } from 'sonner';
+import { toast } from 'sonner';
 
 function LoginPage() {
   // Hooks at the top level
@@ -115,11 +115,10 @@ function LoginPage() {
   });
 
   return (
-    <div className="min-h-[calc(100vh-7rem)] flex justify-center items-center bg-gray-50">
-      <Toaster position="top-center" richColors />
+    <div className="w-full max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">
       <form
-        onSubmit={onSubmit}
-        className="w-full max-w-md bg-[#f5f5f5] p-8 rounded-lg shadow-lg"
+        onSubmit={handleSubmit(onSubmit)}
+        className="w-full"
       >
         {error && (
           <p className="bg-[#e01717] text-white text-sm p-3 rounded mb-4 text-center">
@@ -173,6 +172,7 @@ function LoginPage() {
           Ingresar
         </button>
       </form>
+
     </div>
   );
 }

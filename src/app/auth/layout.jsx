@@ -1,10 +1,10 @@
-// This layout will be used for all auth routes
-// It doesn't include the Navbar
 
 export default function AuthLayout({ children }) {
   return (
-    <div className="min-h-screen bg-gray-50">
-      {children}
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      <main className="flex-1 flex items-center justify-center p-4">
+        {children}
+      </main>
     </div>
   );
 }

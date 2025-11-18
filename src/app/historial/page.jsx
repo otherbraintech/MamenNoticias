@@ -2,23 +2,20 @@
 
 import { useEffect, useState } from "react";
 import { usePDFGenerator } from "@/hooks/usePDFGenerator";
-import { useNews } from "@/hooks/useNews";
 import { toast } from "sonner";
+import Footer from "@/components/Footer";
+import PageLoading from "@/components/PageLoading";
 
 function formatISODate(date) {
   return date.toISOString().slice(0, 10);
 }
 
 export default function HistorialPage() {
-  const { 
-    noticias, 
-    loading, 
-    manejarEstado, 
-    actualizandoEstado 
-  } = useNews();
+  // Estado local para loading y noticias históricas
+  const [loading, setLoading] = useState(true);
+  const [noticias, setNoticias] = useState([]);
+  const [actualizandoEstado, setActualizandoEstado] = useState({});
   const [error, setError] = useState(null);
-
-
   const [startDate, setStartDate] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
@@ -28,10 +25,12 @@ export default function HistorialPage() {
   });
   const [filteredNoticias, setFilteredNoticias] = useState([]);
   const { generarBoletin, generando } = usePDFGenerator(
-    filteredNoticias.filter(n => n.estado === 'APROBADA')
+    noticias
   );
 
+
   async function fetchHistorial(params = {}) {
+    setLoading(true);
     try {
       setError(null);
       const search = new URLSearchParams();
@@ -44,9 +43,12 @@ export default function HistorialPage() {
       }
       const data = await res.json();
       setFilteredNoticias(Array.isArray(data) ? data : []);
+      setNoticias(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error(e);
       setError(e.message || "Error desconocido");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -54,6 +56,10 @@ export default function HistorialPage() {
     // Cargar con rango de fechas por defecto al montar
     fetchHistorial({ start: startDate, end: endDate });
   }, []); // solo una vez al montar
+
+  if (loading) {
+    return <PageLoading />;
+  }
 
 
   function handleFilterByRange(e) {
@@ -64,19 +70,35 @@ export default function HistorialPage() {
 
   const handleEstadoChange = async (id, nuevoEstado) => {
     try {
-      await manejarEstado(id, nuevoEstado);
+      setActualizandoEstado(prev => ({ ...prev, [id]: true }));
       // Actualizar el estado local para reflejar los cambios
       setFilteredNoticias(prev => 
         prev.map(noticia => 
           noticia.id === id ? { ...noticia, estado: nuevoEstado } : noticia
         )
       );
+      setNoticias(prev => 
+        prev.map(noticia => 
+          noticia.id === id ? { ...noticia, estado: nuevoEstado } : noticia
+        )
+      );
+      // Llamada a la API para actualizar el estado
+      const res = await fetch("/api/noticias", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, estado: nuevoEstado.toUpperCase() }),
+      });
+      if (!res.ok) throw new Error("Error al actualizar estado");
+      await res.json();
       toast.success(`Noticia ${nuevoEstado.toLowerCase()} correctamente`);
     } catch (error) {
       console.error('Error al actualizar el estado:', error);
       toast.error('Error al actualizar el estado de la noticia');
+    } finally {
+      setActualizandoEstado(prev => ({ ...prev, [id]: false }));
     }
   };
+
 
   return (
     <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 bg-white min-h-[70vh]">
@@ -133,9 +155,7 @@ export default function HistorialPage() {
         </form>
       </section>
 
-      {loading && (
-        <p className="text-center text-gray-500">Cargando noticias...</p>
-      )}
+
 
       {error && !loading && (
         <p className="text-center text-red-600 mb-4">{error}</p>
@@ -216,6 +236,7 @@ export default function HistorialPage() {
           ))}
         </section>
       )}
+      <Footer />
     </main>
   );
 }
