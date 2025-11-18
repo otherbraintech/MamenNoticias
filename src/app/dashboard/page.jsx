@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import NewsSection from "@/components/NewsSection";
 import ActionButtons from "@/components/ActionButtons";
-import Timer from "@/components/Timer";
 import LoadingModal from "@/components/LoadingModal";
 import { useNews } from "@/hooks/useNews";
 import { usePDFGenerator } from "@/hooks/usePDFGenerator";
@@ -109,21 +110,21 @@ export default function HomePage() {
     return (
       <main className="min-h-[70vh] flex flex-col justify-center items-center px-4 py-10 bg-white max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-6">
-          ¡Bienvenido! Aún no se procesaron noticias hoy
+          ¡Bienvenido! a MamenNoticias
         </h1>
-        <span className="text-gray-500 text-lg mb-6 text-center font-semibold max-w-xl">
-          Podés comenzar buscando, extrayendo, filtrando y generando resúmenes
-          con IA haciendo clic aquí abajo. 🚀
-        </span>
+        <p className="text-gray-500 text-lg mb-6 text-center font-semibold max-w-xl">
+          Aun no se rastrearon noticias para hoy. Podés comenzar buscando noticias anteriores, haciendo clic aquí abajo.
+        </p>
 
-        <ActionButtons
-          ejecutarWebhook={ejecutarWebhook}
-          generarBoletin={generarBoletin}
-          ejecutandoWebhook={ejecutandoWebhook || waiting}
-          generando={generando}
-          hayNoticias={hayNoticias}
-          contador={contador}
-        />
+        <div className="mt-4">
+          <Button className="bg-red-600 hover:bg-red-700">
+            <Link
+            href="/historial"
+          >
+            Ver historial de noticias anteriores
+          </Link>
+          </Button>
+        </div>
 
         {hayNoticias && contador !== null && (
           <p className="text-yellow-600 mt-4 text-center">
@@ -152,10 +153,10 @@ export default function HomePage() {
             <span className="text-red-600 font-extrabold">MAMEN</span> NOTICIAS
             <span className="w-5 h-5 bg-red-600 rounded-full animate-pulse ml-1"></span>
           </h1>
-          <span className="text-gray-700 text-base font-light mb-4 text-center">
+          <span className="text-gray-700 text-base font-light mb-2 text-center">
             Gestiona y aprueba noticias relevantes antes de generar tu boletín en PDF.
           </span>
-          <div className="w-full flex justify-center">
+          <div className="w-full flex justify-center mb-2">
             <ActionButtons
               ejecutarWebhook={ejecutarWebhook}
               generarBoletin={generarBoletin}
@@ -167,6 +168,13 @@ export default function HomePage() {
               webhookError={webhookError}
               showFullButtons={true}
             />
+          </div>
+          <div className="w-full flex justify-center">
+            <Button variant="link"><Link
+              href="/historial"
+            >
+              Ver historial de noticias
+            </Link></Button>
           </div>
           {hayNoticias && mensajeExtraccion && (
             <div

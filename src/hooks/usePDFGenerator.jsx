@@ -96,25 +96,16 @@ export function usePDFGenerator(noticias) {
     setErrorGen(null);
 
     try {
-      const res = await fetch("/api/noticias", {
-        headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'no-cache'
-        }
-      });
-      
-      if (!res.ok) {
-        throw new Error(`Error ${res.status}: No se pudo obtener las noticias desde la base de datos`);
-      }
-      
-      const data = await res.json();
-      if (!Array.isArray(data)) {
-        throw new Error("Formato de datos de noticias inválido");
+      // Usar directamente las noticias que recibe el hook (por ejemplo, desde useNews
+      if (!Array.isArray(noticias)) {
+        throw new Error("No hay noticias disponibles para generar el boletín");
       }
 
-      const noticiasAprobadas = data.filter(
-        (n) => n.estado?.toLowerCase() === "aprobado"
-      );
+      const noticiasAprobadas = noticias.filter((n) => {
+        if (!n?.estado) return false;
+        const estado = String(n.estado).toLowerCase();
+        return estado === "aprobada" || estado === "aprobado";
+      });
 
       if (noticiasAprobadas.length === 0) {
         setErrorGen("No hay noticias aprobadas para generar el boletín.");
@@ -190,16 +181,24 @@ export function usePDFGenerator(noticias) {
       const headerHeight = logoY + logoHeight + 10; // Ajustar el espacio después del logo y fecha
       y = headerHeight + 25; // Actualizar la posición Y para el contenido principal
 
-      // Primera página: máximo 2 noticias
+      // Primera página: máximo 2 noticias (en modo compacto para que quepan mejor)
       let noticiasEnPrimeraPagina = Math.min(noticiasAprobadas.length, 2);
       let noticiasRestantes = noticiasAprobadas.length - noticiasEnPrimeraPagina;
 
-      // Procesar primera página (2 noticias)
+      // Procesar primera página (hasta 2 noticias en modo compacto)
       let noticiasProcesamientoExitoso = 0;
       for (let i = 0; i < noticiasEnPrimeraPagina; i++) {
         const noticia = noticiasAprobadas[i];
         try {
-          y = await agregarNoticiaAPDF(doc, noticia, y, pageWidth, margin, false);
+          // Si estamos demasiado cerca del final de la página, saltar a una nueva
+          // Usamos un margen algo más laxo para intentar meter 2 en la primera hoja
+          if (y > pageHeight - 280) {
+            doc.addPage();
+            y = margin;
+          }
+          // Primera página en modo compacto para que las cajas sean más bajas
+          y = await agregarNoticiaAPDF(doc, noticia, y, pageWidth, margin, true);
+
           noticiasProcesamientoExitoso++;
         } catch (error) {
           console.error(`Error procesando noticia ID ${noticia.id || 'desconocido'}: ${noticia.titulo || 'Sin título'}`, error);
@@ -221,8 +220,8 @@ export function usePDFGenerator(noticias) {
           const noticia = noticiasAprobadas[i];
 
           try {
-            // Si ya hay 3 noticias en la página, crear nueva página
-            if (noticiasEnPagina === 3) {
+            // Si ya hay 3 noticias en la página o estamos cerca del final, crear nueva página
+            if (noticiasEnPagina === 3 || y > pageHeight - 320) {
               doc.addPage();
               y = margin;
               noticiasEnPagina = 0;
@@ -452,8 +451,9 @@ export function usePDFGenerator(noticias) {
     }
     
     let resumenLines = doc.splitTextToSize(resumenMostrar, boxWidth - padding * 2);
-    // Ajustar número de líneas según si tiene imagen o no
-    const maxResumenLines = imagenProcesada ? 5 : 8; // Más líneas si no hay imagen
+    // Ajustar número de líneas según si tiene imagen o no (ligeramente menos para compactar)
+    const maxResumenLines = imagenProcesada ? 4 : 7;
+
     if (resumenLines.length > maxResumenLines) {
       resumenLines = resumenLines.slice(0, maxResumenLines);
       resumenLines[maxResumenLines - 1] += " ...";
@@ -483,8 +483,8 @@ export function usePDFGenerator(noticias) {
     // Calcular altura de la caja dinámicamente según el contenido
     let boxHeightReal;
     if (isCompact) {
-      // Para modo compacto, ajustar según si tiene imagen
-      boxHeightReal = imagenProcesada ? 260 : 180; // Más pequeña sin imagen
+      // Para modo compacto (primera página), un poco más alto para que la noticia se vea más grande
+      boxHeightReal = imagenProcesada ? 290 : 205;
     } else {
       // Para modo normal, usar altura real del contenido
       boxHeightReal = cursorY - y + padding;
@@ -494,8 +494,9 @@ export function usePDFGenerator(noticias) {
     doc.setLineWidth(1.2);
     doc.roundedRect(margin, y, boxWidth, boxHeightReal, 12, 12, "S");
 
-    // Espaciado después de la caja también ajustado
-    const espaciadoDespues = imagenProcesada ? (isCompact ? 5 : 20) : (isCompact ? 3 : 15);
+    // Espaciado después de la caja, reducido para que quepan mejor varias noticias
+    const espaciadoDespues = imagenProcesada ? (isCompact ? 4 : 14) : (isCompact ? 2 : 10);
+
     return y + boxHeightReal + espaciadoDespues;
   }
 

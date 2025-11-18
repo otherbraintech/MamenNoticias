@@ -49,7 +49,7 @@ function HomePage() {
           <div className="mt-8">
             <a
               href={session ? "/dashboard" : "/auth/login"}
-              className="inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-full text-white bg-[#F20519] hover:bg-[#d10416] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+              className="inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-full text-white bg-[#F20519] hover:bg-[#d10416] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors duration-200 shadow-lg hover:shadow-xl transform"
             >
               {session ? "Ir al panel de control" : "Iniciar sesión"}
             </a>
