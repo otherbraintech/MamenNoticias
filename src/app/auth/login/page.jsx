@@ -172,7 +172,7 @@ function LoginPage() {
           Ingresar
         </button>
       </form>
-
+      
     </div>
   );
 }
