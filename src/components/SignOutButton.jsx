@@ -16,14 +16,8 @@ export default function SignOutButton() {
     
     try {
       await new Promise(resolve => setTimeout(resolve, 100));
-      
-      await signOut({ 
-        redirect: false,
-        callbackUrl: "/" 
-      });
-      
+      await signOut({ redirect: false, callbackUrl: "/" });
       toast.success('Sesión cerrada con éxito', { id: toastId });
-      
       window.location.href = '/';
     } catch (error) {
       console.error('Error al cerrar sesión:', error);
@@ -31,105 +25,54 @@ export default function SignOutButton() {
     }
   };
 
-  const cancelSignOut = () => setShowModal(false);
-
-  const onModalContentClick = (e) => e.stopPropagation();
-
   return (
     <>
       <button
         onClick={handleSignOut}
-        className="flex items-center gap-2 text-white hover:text-[#33ffff] transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-[#33ffff] focus:ring-offset-2 rounded"
-        aria-haspopup="dialog"
-        aria-expanded={showModal}
-        aria-controls="signout-modal"
+        className="flex items-center gap-2 text-white/90 hover:text-white transition-all duration-300 font-bold text-xs tracking-widest uppercase bg-white/10 px-4 py-2 rounded-xl hover:bg-white/20 active:scale-95"
       >
-        Cerrar sesión
-        <CiLogout size={22} />
+        <span>Salir</span>
+        <CiLogout size={18} className="stroke-2" />
       </button>
 
       {showModal && (
         <div
-          id="signout-modal"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="signout-title"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm animate-fade-in"
-          onClick={cancelSignOut}
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300 px-4"
+          onClick={() => setShowModal(false)}
         >
           <div
-            onClick={onModalContentClick}
-            className="relative bg-white rounded-xl shadow-2xl p-8 max-w-md w-full text-center animate-modal-pop"
+            onClick={(e) => e.stopPropagation()}
+            className="relative bg-white rounded-[2.5rem] shadow-2xl p-8 sm:p-10 max-w-sm w-full text-center animate-in zoom-in-95 duration-300"
           >
-            <button
-              onClick={cancelSignOut}
-              className="absolute top-3 right-3 text-gray-400 hover:text-[#33ffff] transition-colors focus:outline-none focus:ring-2 focus:ring-[#33ffff] rounded"
-              aria-label="Cerrar diálogo"
-            >
-              <MdClose size={22} />
-            </button>
-
-            <div className="flex flex-col items-center mb-6">
-              <MdWarningAmber size={48} className="text-[#da0b0a] mb-3" />
-              <h2
-                id="signout-title"
-                className="mb-2 text-black font-semibold text-xl"
-              >
-                ¿Estás seguro que quieres salir?
-              </h2>
-              <p className="text-gray-600 text-sm max-w-lg">
-                Tu sesión se cerrará y deberás volver a iniciar sesión para
-                acceder nuevamente.
-              </p>
+            <div className="w-20 h-20 bg-red-50 text-[#F22233] rounded-3xl flex items-center justify-center mx-auto mb-6">
+              <MdWarningAmber size={40} />
             </div>
+            
+            <h2 className="text-2xl font-black text-gray-900 mb-2 uppercase tracking-tight leading-tight">
+              ¿CERRAR SESIÓN?
+            </h2>
+            <p className="text-gray-500 text-sm font-medium mb-8 leading-relaxed">
+              Deberás volver a iniciar sesión para gestionar las noticias.
+            </p>
 
-            <div className="mt-6 w-full flex justify-center gap-3 sm:gap-4">
+            <div className="flex flex-col gap-3">
               <button
                 onClick={confirmSignOut}
-                className="flex items-center gap-2 px-4 py-1.5 rounded bg-[#da0b0a] text-white hover:bg-[#b30a08] focus:outline-none focus:ring-4 focus:ring-[#da0b0a]/70 font-semibold transition-colors"
+                className="w-full py-4 bg-[#F22233] text-white rounded-2xl font-bold hover:opacity-90 shadow-lg shadow-red-100 transition-all active:scale-95 uppercase text-xs tracking-widest flex items-center justify-center gap-2"
               >
-                <CiLogout size={18} />
-                Sí, salir
+                <CiLogout size={20} className="stroke-2" />
+                SÍ, CERRAR SESIÓN
               </button>
               <button
-  onClick={cancelSignOut}
-  className="flex items-center gap-2 px-4 py-1.5 rounded bg-white border border-[#123488] text-[#123488] hover:bg-[#e6f0ff] focus:outline-none focus:ring-4 focus:ring-[#123488]/50 font-semibold transition-colors"
->
-  <MdClose size={18} />
-  Cancelar
-</button>
-
+                onClick={() => setShowModal(false)}
+                className="w-full py-4 bg-gray-50 text-gray-400 rounded-2xl font-bold hover:bg-gray-100 transition-all active:scale-95 uppercase text-xs tracking-widest"
+              >
+                CANCELAR
+              </button>
             </div>
           </div>
         </div>
       )}
-
-      <style jsx global>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.25s ease forwards;
-        }
-        @keyframes modal-pop {
-          from {
-            transform: scale(0.95);
-            opacity: 0;
-          }
-          to {
-            transform: scale(1);
-            opacity: 1;
-          }
-        }
-        .animate-modal-pop {
-          animation: modal-pop 0.25s ease forwards;
-        }
-      `}</style>
     </>
   );
 }

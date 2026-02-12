@@ -39,14 +39,16 @@ model ArticuloBruto {
   estado EstadoArticulo @default(SIN_TRABAJAR)
   creado DateTime       @default(now())
 }
+
 model Periodicos {
-  id        Int      @id @default(autoincrement())
-  name    String   // Nombre del medio digital
-  web_principal      String   // Link original del medio digital
-  url       String?  // Enlace XML (puede ser opcional)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            Int      @id @default(autoincrement())
+  name          String // Nombre del medio digital
+  web_principal String // Link original del medio digital
+  url           String? // Enlace XML (puede ser opcional)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
+
 enum Rol {
   ADMINISTRADOR
   LECTOR

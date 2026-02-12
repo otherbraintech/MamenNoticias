@@ -1,17 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { usePDFGenerator } from "@/hooks/usePDFGenerator";
 import { toast } from "sonner";
-import Footer from "@/components/Footer";
 import PageLoading from "@/components/PageLoading";
-
-function formatISODate(date) {
-  return date.toISOString().slice(0, 10);
-}
+import NewsCard from "@/components/NewsCard";
+import { ChevronLeft, Filter, Calendar, FileText } from "lucide-react";
 
 export default function HistorialPage() {
-  // Estado local para loading y noticias históricas
   const [loading, setLoading] = useState(true);
   const [noticias, setNoticias] = useState([]);
   const [actualizandoEstado, setActualizandoEstado] = useState({});
@@ -24,26 +21,22 @@ export default function HistorialPage() {
     return new Date().toISOString().split('T')[0];
   });
   const [filteredNoticias, setFilteredNoticias] = useState([]);
-  const { generarBoletin, generando } = usePDFGenerator(
-    noticias
-  );
-
+  
+  const { generarBoletin, generando } = usePDFGenerator(noticias);
 
   async function fetchHistorial(params = {}) {
     setLoading(true);
     try {
       setError(null);
       const search = new URLSearchParams();
-      // Always use start/end date, with defaults if not provided
       search.set("start", params.start || startDate);
       search.set("end", params.end || endDate);
       const res = await fetch(`/api/noticias/historial?${search.toString()}`);
-      if (!res.ok) {
-        throw new Error("Error al cargar historial");
-      }
+      if (!res.ok) throw new Error("Error al cargar historial");
       const data = await res.json();
-      setFilteredNoticias(Array.isArray(data) ? data : []);
-      setNoticias(Array.isArray(data) ? data : []);
+      const list = Array.isArray(data) ? data : [];
+      setFilteredNoticias(list);
+      setNoticias(list);
     } catch (e) {
       console.error(e);
       setError(e.message || "Error desconocido");
@@ -53,190 +46,131 @@ export default function HistorialPage() {
   }
 
   useEffect(() => {
-    // Cargar con rango de fechas por defecto al montar
-    fetchHistorial({ start: startDate, end: endDate });
-  }, []); // solo una vez al montar
+    if (startDate && endDate) {
+      fetchHistorial({ start: startDate, end: endDate });
+    }
+  }, [startDate, endDate]);
 
-  if (loading) {
-    return <PageLoading />;
-  }
-
-
-  function handleFilterByRange(e) {
-    e.preventDefault();
-    if (!startDate || !endDate) return;
-    fetchHistorial({ start: startDate, end: endDate });
-  }
-
-  const handleEstadoChange = async (id, nuevoEstado) => {
+  const manejarEstado = async (id, nuevoEstado) => {
     try {
       setActualizandoEstado(prev => ({ ...prev, [id]: true }));
-      // Actualizar el estado local para reflejar los cambios
       setFilteredNoticias(prev => 
-        prev.map(noticia => 
-          noticia.id === id ? { ...noticia, estado: nuevoEstado } : noticia
-        )
+        prev.map(n => n.id === id ? { ...n, estado: nuevoEstado.toUpperCase() } : n)
       );
       setNoticias(prev => 
-        prev.map(noticia => 
-          noticia.id === id ? { ...noticia, estado: nuevoEstado } : noticia
-        )
+        prev.map(n => n.id === id ? { ...n, estado: nuevoEstado.toUpperCase() } : n)
       );
-      // Llamada a la API para actualizar el estado
+
       const res = await fetch("/api/noticias", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, estado: nuevoEstado.toUpperCase() }),
       });
       if (!res.ok) throw new Error("Error al actualizar estado");
-      await res.json();
       toast.success(`Noticia ${nuevoEstado.toLowerCase()} correctamente`);
     } catch (error) {
-      console.error('Error al actualizar el estado:', error);
-      toast.error('Error al actualizar el estado de la noticia');
+      console.error(error);
+      toast.error('Error al actualizar el estado');
     } finally {
       setActualizandoEstado(prev => ({ ...prev, [id]: false }));
     }
   };
 
+  if (loading) return <PageLoading message="Cargando historial..." />;
 
   return (
-    <main className="max-w-5xl mx-auto px-4 sm:px-6 py-6 bg-white min-h-[70vh]">
-      <header className="mb-6 flex flex-col gap-2">
-        <h1 className="text-2xl sm:text-3xl font-bold text-[#F20519]">Historial de noticias</h1>
-        <p className="text-gray-600 text-sm">
-          Consulta las noticias anteriores filtrando por mes o por un rango específico de fechas.
-        </p>
-      </header>
+    <main className="min-h-screen bg-gray-50/50 pb-20">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+        {/* Breadcrumbs */}
+        <nav className="mb-6">
+          <Link 
+            href="/dashboard" 
+            className="group inline-flex items-center text-gray-500 hover:text-[#F22233] transition-colors font-semibold text-xs uppercase tracking-widest"
+          >
+            <ChevronLeft className="w-4 h-4 mr-1 transition-transform group-hover:-translate-x-1" />
+            VOLVER AL DASHBOARD
+          </Link>
+        </nav>
 
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold">Filtros</h2>
-        <button
-          onClick={() => generarBoletin()}
-          disabled={generando || filteredNoticias.length === 0}
-          className="bg-[#F20519] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#d10416] disabled:bg-gray-300 disabled:cursor-not-allowed"
-        >
-          {generando ? 'Generando PDF...' : 'Descargar PDF'}
-        </button>
-      </div>
-      <section className="mb-6 grid gap-4 md:grid-cols-1">
-        <form
-          onSubmit={handleFilterByRange}
-          className="bg-[#f5f5f5] p-4 rounded-lg shadow flex flex-col gap-2"
-        >
-          <h2 className="font-semibold mb-1 text-[#F20519]">Filtrar por rango de fechas</h2>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <div className="flex-1">
-              <label className="text-xs text-gray-600 mb-1 block">Desde</label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="w-full border border-gray-300 rounded p-2 focus:outline-none focus:ring-2 focus:ring-[#F20519]"
-              />
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-black text-gray-900 mb-2 tracking-tight">
+              HISTORIAL <span className="text-[#2BC7D9] uppercase">Noticias</span>
+            </h1>
+            <p className="text-gray-500 text-sm max-w-xl font-medium">
+              Explora, filtra y gestiona noticias de fechas anteriores para tus reportes.
+            </p>
+          </div>
+          
+          <button
+            onClick={() => generarBoletin()}
+            disabled={generando || filteredNoticias.length === 0}
+            className="inline-flex items-center justify-center gap-2 bg-[#F22233] text-white px-6 py-3 rounded-xl text-sm font-bold hover:opacity-90 shadow-lg shadow-red-100 transition-all active:scale-95 disabled:bg-gray-200 disabled:shadow-none disabled:text-gray-400"
+          >
+            <FileText className="w-4 h-4" />
+            {generando ? 'GENERANDO PDF...' : 'GENERAR REPORTE PDF'}
+          </button>
+        </div>
+
+        {/* Filters Section */}
+        <section className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-10">
+          <div className="flex items-center gap-2 mb-4 text-gray-800">
+            <Filter className="w-4 h-4 text-[#F22233]" />
+            <h2 className="font-bold uppercase text-xs tracking-wider">Filtrar por rango</h2>
+          </div>
+          <div className="flex flex-col md:flex-row items-end gap-4">
+            <div className="w-full md:w-auto flex-1">
+              <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1.5 ml-1">Desde</label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border-none rounded-xl text-sm font-semibold focus:ring-2 focus:ring-[#F22233]/20 transition-all cursor-pointer"
+                />
+              </div>
             </div>
-            <div className="flex-1">
-              <label className="text-xs text-gray-600 mb-1 block">Hasta</label>
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full border border-gray-300 rounded p-2 focus:outline-none focus:ring-2 focus:ring-[#F20519]"
-              />
+            <div className="w-full md:w-auto flex-1">
+              <label className="text-[10px] uppercase font-bold text-gray-400 block mb-1.5 ml-1">Hasta</label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border-none rounded-xl text-sm font-semibold focus:ring-2 focus:ring-[#F22233]/20 transition-all cursor-pointer"
+                />
+              </div>
             </div>
           </div>
-          <button
-            type="submit"
-            disabled={!startDate || !endDate}
-            className="mt-2 self-start bg-[#F20519] text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-[#d10416] disabled:bg-gray-300 disabled:cursor-not-allowed"
-          >
-            Aplicar rango
-          </button>
-        </form>
-      </section>
-
-
-
-      {error && !loading && (
-        <p className="text-center text-red-600 mb-4">{error}</p>
-      )}
-
-      {!loading && filteredNoticias.length === 0 && (
-        <p className="text-center text-gray-500">No hay noticias para el período seleccionado.</p>
-      )}
-
-      {!loading && filteredNoticias.length > 0 && (
-        <section className="mt-4 grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {filteredNoticias.map((noticia) => (
-            <article
-              key={noticia.id}
-              className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"
-            >
-              {noticia.imagen && (
-                <div className="mb-3">
-                  <img 
-                    src={noticia.imagen} 
-                    alt={noticia.titulo || "Imagen de la noticia"}
-                    className="w-full h-48 object-cover rounded-lg mb-3"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                    }}
-                  />
-                </div>
-              )}
-              <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-2">
-                <h2 className="font-semibold text-gray-800 text-lg">
-                  {noticia.titulo || "Sin título"}
-                </h2>
-                <span className="text-xs text-gray-500">
-                  {noticia.fecha_bolivia || noticia.fecha_utc || noticia.created_at}
-                </span>
-              </header>
-              {noticia.resumen && (
-                <p className="text-sm text-gray-700 mb-3">{noticia.resumen}</p>
-              )}
-              <div className="flex justify-end space-x-2 mt-2">
-                <button
-                  onClick={() => handleEstadoChange(noticia.id, 'APROBADA')}
-                  disabled={actualizandoEstado[noticia.id]}
-                  className={`px-3 py-1 text-sm rounded ${
-                    noticia.estado === 'APROBADA' 
-                      ? 'bg-green-600 text-white' 
-                      : 'bg-green-100 text-green-800 hover:bg-green-200'
-                  } ${actualizandoEstado[noticia.id] ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  {actualizandoEstado[noticia.id] ? 'Actualizando...' : 'Aprobar'}
-                </button>
-                <button
-                  onClick={() => handleEstadoChange(noticia.id, 'RECHAZADA')}
-                  disabled={actualizandoEstado[noticia.id]}
-                  className={`px-3 py-1 text-sm rounded ${
-                    noticia.estado === 'RECHAZADA'
-                      ? 'bg-red-600 text-white'
-                      : 'bg-red-100 text-red-800 hover:bg-red-200'
-                  } ${actualizandoEstado[noticia.id] ? 'opacity-50 cursor-not-allowed' : ''}`}
-                >
-                  {actualizandoEstado[noticia.id] ? 'Actualizando...' : 'Rechazar'}
-                </button>
-              </div>
-              {noticia.fuente && (
-                <p className="text-xs text-gray-500">Fuente: {noticia.fuente}</p>
-              )}
-              {noticia.url && (
-                <a
-                  href={noticia.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-blue-600 hover:underline mt-1 inline-block"
-                >
-                  Ver noticia original
-                </a>
-              )}
-            </article>
-          ))}
         </section>
-      )}
-      <Footer />
+
+        {/* Content Section */}
+        {error && (
+          <div className="bg-red-50 text-red-600 p-4 rounded-xl text-center font-bold text-sm mb-6 border border-red-100">
+            {error}
+          </div>
+        )}
+
+        {filteredNoticias.length === 0 ? (
+          <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200">
+            <p className="text-gray-400 font-medium">No se encontraron noticias para este período.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredNoticias.map((noticia) => (
+              <NewsCard 
+                key={noticia.id} 
+                noticia={noticia} 
+                manejarEstado={manejarEstado} 
+                estaActualizando={actualizandoEstado[noticia.id]} 
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </main>
   );
 }

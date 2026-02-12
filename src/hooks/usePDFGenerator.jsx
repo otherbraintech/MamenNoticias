@@ -123,22 +123,22 @@ export function usePDFGenerator(noticias) {
       let y = margin;
 
       // ====== FRANJAS DE COLOR EN CABECERA ======
-      const franja1Height = 8; // Primera franja más gruesa (azul)
+      const franja1Height = 8; // Primera franja más gruesa (turquesa)
       const franja2Height = 16;  // Segunda franja más delgada (roja)
       
       // Asegurarse de que no hay margen superior para las franjas
       y = 0;
       
-      // Primera franja: #05DBF2 (azul) - más gruesa
-      doc.setFillColor(5, 219, 242); // #05DBF2
+      // Primera franja: #2BC7D9 (turquesa)
+      doc.setFillColor(43, 199, 217); 
       doc.rect(0, y, pageWidth, franja1Height, "F");
       
-      // Segunda franja: #F20C36 (rojo) - más delgada
-      doc.setFillColor(242, 12, 54); // #F20C36
+      // Segunda franja: #F22233 (rojo)
+      doc.setFillColor(242, 34, 51); 
       doc.rect(0, y + franja1Height, pageWidth, franja2Height, "F");
       
       // Ajustar posición Y después de las franjas
-      y = (franja1Height + franja2Height) + 20; // Espacio adicional después de las franjas
+      y = (franja1Height + franja2Height) + 20;
 
       // Cargar el logo de Mamen Noticias con manejo de errores
       let logoMamen = null;
@@ -181,62 +181,44 @@ export function usePDFGenerator(noticias) {
       const headerHeight = logoY + logoHeight + 10; // Ajustar el espacio después del logo y fecha
       y = headerHeight + 25; // Actualizar la posición Y para el contenido principal
 
-      // Primera página: máximo 2 noticias (en modo compacto para que quepan mejor)
+      // Primera página: máximo 2 noticias
       let noticiasEnPrimeraPagina = Math.min(noticiasAprobadas.length, 2);
-      let noticiasRestantes = noticiasAprobadas.length - noticiasEnPrimeraPagina;
-
-      // Procesar primera página (hasta 2 noticias en modo compacto)
+      
       let noticiasProcesamientoExitoso = 0;
       for (let i = 0; i < noticiasEnPrimeraPagina; i++) {
         const noticia = noticiasAprobadas[i];
         try {
-          // Si estamos demasiado cerca del final de la página, saltar a una nueva
-          // Usamos un margen algo más laxo para intentar meter 2 en la primera hoja
-          if (y > pageHeight - 280) {
-            doc.addPage();
-            y = margin;
-          }
-          // Primera página en modo compacto para que las cajas sean más bajas
+          // Primera página usa un margen superior mayor por el encabezado
           y = await agregarNoticiaAPDF(doc, noticia, y, pageWidth, margin, true);
-
           noticiasProcesamientoExitoso++;
         } catch (error) {
-          console.error(`Error procesando noticia ID ${noticia.id || 'desconocido'}: ${noticia.titulo || 'Sin título'}`, error);
-          noticiasDescartadas.push({
-            id: noticia.id || 'desconocido',
-            titulo: noticia.titulo || 'Sin título',
-            error: error.message
-          });
+          console.error(`Error procesando noticia:`, error);
+          noticiasDescartadas.push({ titulo: noticia.titulo || "Sin título", error: error.message });
         }
       }
 
-      // Si hay más noticias, crear nuevas páginas con 3 noticias cada una
-      if (noticiasRestantes > 0) {
+      // Otras páginas: máximo 3 noticias
+      if (noticiasAprobadas.length > 2) {
         doc.addPage();
-        y = margin;
-        let noticiasEnPagina = 0;
+        y = margin + 30; // Margen superior para páginas interiores
+        let noticiasEnPaginaActual = 0;
 
-        for (let i = noticiasEnPrimeraPagina; i < noticiasAprobadas.length; i++) {
+        for (let i = 2; i < noticiasAprobadas.length; i++) {
           const noticia = noticiasAprobadas[i];
+          
+          if (noticiasEnPaginaActual === 3) {
+            doc.addPage();
+            y = margin + 30;
+            noticiasEnPaginaActual = 0;
+          }
 
           try {
-            // Si ya hay 3 noticias en la página o estamos cerca del final, crear nueva página
-            if (noticiasEnPagina === 3 || y > pageHeight - 320) {
-              doc.addPage();
-              y = margin;
-              noticiasEnPagina = 0;
-            }
-
-            y = await agregarNoticiaAPDF(doc, noticia, y, pageWidth, margin, true);
-            noticiasEnPagina++;
+            y = await agregarNoticiaAPDF(doc, noticia, y, pageWidth, margin, false);
+            noticiasEnPaginaActual++;
             noticiasProcesamientoExitoso++;
           } catch (error) {
-            console.error(`Error procesando noticia ID ${noticia.id || 'desconocido'}: ${noticia.titulo || 'Sin título'}`, error);
-            noticiasDescartadas.push({
-              id: noticia.id || 'desconocido',
-              titulo: noticia.titulo || 'Sin título',
-              error: error.message
-            });
+            console.error(`Error procesando noticia:`, error);
+            noticiasDescartadas.push({ titulo: noticia.titulo || "Sin título", error: error.message });
           }
         }
       }
@@ -286,7 +268,7 @@ export function usePDFGenerator(noticias) {
     }
 
     const boxWidth = pageWidth - margin * 2;
-    const padding = 15;
+    const padding = isCompact ? 15 : 10; // Menos padding en páginas interiores
     let cursorY = y + padding;
 
     // Estilo de la caja
@@ -315,10 +297,10 @@ export function usePDFGenerator(noticias) {
     doc.text(metaText, margin + padding, cursorY);
     cursorY += 18;
 
-    // Título con validación - CAMBIO DE COLOR AQUÍ
+    // Título con validación
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(13);
-    doc.setTextColor("#F20C36"); // Cambiado de "#12358d" a "#F20C36" (skyblue)
+    doc.setFontSize(isCompact ? 13 : 11); // Título un poco más pequeño en páginas interiores
+    doc.setTextColor("#F22233"); // Rojo Mamen
     
     let tituloSeguro = noticia.titulo.trim();
     if (tituloSeguro.length > 200) {
@@ -327,7 +309,7 @@ export function usePDFGenerator(noticias) {
     
     const titleLines = doc.splitTextToSize(tituloSeguro, boxWidth - padding * 2);
     doc.text(titleLines, margin + padding, cursorY);
-    cursorY += titleLines.length * 18;
+    cursorY += titleLines.length * (isCompact ? 18 : 14); // Menos espacio entre líneas en páginas interiores
 
     // MEJORA PRINCIPAL: Manejo robusto de imágenes
     let imagenProcesada = false;
@@ -369,7 +351,7 @@ export function usePDFGenerator(noticias) {
               let imgHeight = imgWidth / imgAspectRatio;
               
               // Si la imagen es muy alta, limitar su altura
-              const maxImgHeight = isCompact ? 120 : 200;
+              const maxImgHeight = isCompact ? 140 : 105; // Más pequeña aún para asegurar 3 por página
               if (imgHeight > maxImgHeight) {
                 imgHeight = maxImgHeight;
                 imgWidth = imgHeight * imgAspectRatio;
@@ -451,20 +433,20 @@ export function usePDFGenerator(noticias) {
     }
     
     let resumenLines = doc.splitTextToSize(resumenMostrar, boxWidth - padding * 2);
-    // Ajustar número de líneas según si tiene imagen o no (ligeramente menos para compactar)
-    const maxResumenLines = imagenProcesada ? 4 : 7;
+    // Ajustar número de líneas para que quepan 3 por página
+    const maxResumenLines = isCompact ? 5 : 3; 
 
     if (resumenLines.length > maxResumenLines) {
       resumenLines = resumenLines.slice(0, maxResumenLines);
       resumenLines[maxResumenLines - 1] += " ...";
     }
     doc.text(resumenLines, margin + padding, cursorY);
-    cursorY += resumenLines.length * (isCompact ? 12 : 14);
+    cursorY += resumenLines.length * (isCompact ? 13 : 12) + 6; // Menos espacio en páginas interiores
 
     // Leer más con validación de URL
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(11);
-    doc.setTextColor("#05DBF2");
+    doc.setFontSize(10);
+    doc.setTextColor("#2BC7D9"); // Turquesa Mamen
     
     let urlSegura = "#";
     try {
@@ -475,10 +457,10 @@ export function usePDFGenerator(noticias) {
       console.warn("Error procesando URL:", error);
     }
     
-    doc.textWithLink("Leer más", margin + padding, cursorY, {
+    doc.textWithLink("VER NOTICIA ORIGINAL", margin + padding, cursorY, {
       url: urlSegura,
     });
-    cursorY += 20;
+    cursorY += 15;
 
     // Calcular altura de la caja dinámicamente según el contenido
     let boxHeightReal;
@@ -494,8 +476,8 @@ export function usePDFGenerator(noticias) {
     doc.setLineWidth(1.2);
     doc.roundedRect(margin, y, boxWidth, boxHeightReal, 12, 12, "S");
 
-    // Espaciado después de la caja, reducido para que quepan mejor varias noticias
-    const espaciadoDespues = imagenProcesada ? (isCompact ? 4 : 14) : (isCompact ? 2 : 10);
+    // Espaciado después de la caja
+    const espaciadoDespues = isCompact ? 15 : 8; 
 
     return y + boxHeightReal + espaciadoDespues;
   }

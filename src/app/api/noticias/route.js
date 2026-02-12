@@ -8,13 +8,21 @@ export async function GET() {
   try {
     const zonaBolivia = "America/La_Paz";
 
-    // Traemos todas las noticias ordenadas por fecha (desc)
-    const todasNoticias = await prisma.news.findMany({
+    // Obtenemos el inicio del día actual en Bolivia
+    const inicioHoyBolivia = DateTime.now().setZone(zonaBolivia).startOf("day").toUTC().toJSDate();
+
+    // Traemos solo las noticias del día actual
+    const noticiasHoy = await prisma.news.findMany({
+      where: {
+        created_at: {
+          gte: inicioHoyBolivia,
+        },
+      },
       orderBy: { created_at: "desc" },
     });
 
     // Mapear para formatear las fechas
-    const noticiasConFechaFormateada = todasNoticias.map((noticia) => {
+    const noticiasConFechaFormateada = noticiasHoy.map((noticia) => {
       const fechaUTC = DateTime.fromJSDate(noticia.created_at).toUTC();
       const fechaBolivia = fechaUTC.setZone(zonaBolivia);
 
@@ -26,7 +34,7 @@ export async function GET() {
       };
     });
 
-    console.log(`[DEBUG] Noticias encontradas: ${noticiasConFechaFormateada.length}`);
+    console.log(`[DEBUG] Noticias de hoy encontradas: ${noticiasConFechaFormateada.length}`);
 
     return NextResponse.json(noticiasConFechaFormateada, {
       status: 200,
