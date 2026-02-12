@@ -73,7 +73,7 @@ export default function NewsCard({ noticia, manejarEstado, estaActualizando }) {
         {/* AI Summary */}
         <div className="mb-8 flex-grow">
           <p className="text-xs sm:text-sm text-gray-600 leading-relaxed italic">
-            "{noticia.resumen_ia || noticia.resumen}"
+            &quot;{noticia.resumen_ia || noticia.resumen}&quot;
           </p>
         </div>
 

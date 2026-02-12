@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { usePDFGenerator } from "@/hooks/usePDFGenerator";
 import { toast } from "sonner";
@@ -24,7 +24,7 @@ export default function HistorialPage() {
   
   const { generarBoletin, generando } = usePDFGenerator(noticias);
 
-  async function fetchHistorial(params = {}) {
+  const fetchHistorial = useCallback(async (params = {}) => {
     setLoading(true);
     try {
       setError(null);
@@ -43,13 +43,13 @@ export default function HistorialPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [startDate, endDate]);
 
   useEffect(() => {
     if (startDate && endDate) {
       fetchHistorial({ start: startDate, end: endDate });
     }
-  }, [startDate, endDate]);
+  }, [startDate, endDate, fetchHistorial]);
 
   const manejarEstado = async (id, nuevoEstado) => {
     try {

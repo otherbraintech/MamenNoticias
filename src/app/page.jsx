@@ -42,7 +42,7 @@ function HomePage() {
               Gestión Estratégica de Medios
             </h2>
             <p className="text-gray-500 text-lg sm:text-xl md:text-2xl font-bold max-w-2xl mx-auto leading-tight italic">
-              "Plataforma integral para el monitoreo, filtrado y reporte de noticias digitales en tiempo real."
+              &quot;Plataforma integral para el monitoreo, filtrado y reporte de noticias digitales en tiempo real.&quot;
             </p>
           </div>
 
