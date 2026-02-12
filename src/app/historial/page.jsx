@@ -46,10 +46,8 @@ export default function HistorialPage() {
   }, [startDate, endDate]);
 
   useEffect(() => {
-    if (startDate && endDate) {
-      fetchHistorial({ start: startDate, end: endDate });
-    }
-  }, [startDate, endDate, fetchHistorial]);
+    fetchHistorial({ start: startDate, end: endDate });
+  }, [fetchHistorial]); // Quitamos startDate y endDate para evitar auto-fetch
 
   const manejarEstado = async (id, nuevoEstado) => {
     try {
@@ -144,6 +142,12 @@ export default function HistorialPage() {
                 />
               </div>
             </div>
+            <button
+              onClick={() => fetchHistorial()}
+              className="w-full md:w-auto px-8 py-3 bg-gray-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-black transition-all active:scale-95 shadow-lg shadow-gray-200"
+            >
+              BUSCAR NOTICIAS
+            </button>
           </div>
         </section>
 

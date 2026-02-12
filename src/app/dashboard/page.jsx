@@ -79,11 +79,11 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gray-50/50 pb-20">
       <header className="w-full sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 py-4 sm:py-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="max-w-6xl mx-auto px-4 py-3 sm:py-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
             <div className="flex items-center justify-between md:justify-start w-full md:w-auto">
               <div className="text-left">
-                <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tighter flex items-center gap-2">
+                <h1 className="text-xl sm:text-3xl font-black text-gray-900 tracking-tighter flex items-center gap-2">
                   <span className="text-[#F22233]">MAMEN</span> 
                   <span className="uppercase tracking-widest text-[#2BC7D9]">Noticias</span>
                 </h1>
@@ -93,14 +93,14 @@ export default function HomePage() {
               </div>
 
               {/* Mobile News Count Badge */}
-              <div className="md:hidden bg-[#2BC7D9]/10 px-3 py-1.5 rounded-full">
-                <span className="text-[10px] font-black tracking-widest text-[#2BC7D9] uppercase">
+              <div className="md:hidden bg-[#2BC7D9]/10 px-2 py-1 rounded-full">
+                <span className="text-[9px] font-black tracking-widest text-[#2BC7D9] uppercase">
                   {noticias.length} NOTICIAS
                 </span>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+            <div className="flex items-center gap-2 w-full md:w-auto">
               <div className="hidden md:flex items-center gap-2">
                 <div className="bg-white border border-gray-100 px-3 py-2 rounded-xl shadow-sm flex items-center gap-2">
                   <div className="w-2 h-2 bg-[#F22233] rounded-full animate-pulse"></div>
@@ -110,14 +110,15 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <Link href="/historial" className="flex-1 sm:flex-none">
-                  <button className="w-full flex items-center justify-center gap-1.5 px-4 py-2.5 bg-[#2BC7D9]/10 text-[#2BC7D9] hover:bg-[#2BC7D9] hover:text-white rounded-xl text-[10px] font-black tracking-widest uppercase transition-all active:scale-95">
-                    <MdHistory className="text-sm" />
-                    HISTORIAL
+              <div className="flex items-center gap-2 w-full">
+                <Link href="/historial" className="flex-1 md:flex-none">
+                  <button className="w-full flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 bg-[#2BC7D9]/10 text-[#2BC7D9] hover:bg-[#2BC7D9] hover:text-white rounded-lg sm:rounded-xl text-[9px] sm:text-[10px] font-black tracking-widest uppercase transition-all active:scale-95">
+                    <MdHistory className="text-base" />
+                    <span className="hidden sm:inline">HISTORIAL</span>
+                    <span className="sm:hidden">HIST.</span>
                   </button>
                 </Link>
-                <div className="flex-1 sm:flex-none">
+                <div className="flex-[2] md:flex-none">
                   <ActionButtons
                     generarBoletin={generarBoletin}
                     generando={generando}
