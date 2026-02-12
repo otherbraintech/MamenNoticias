@@ -8,10 +8,10 @@ const Footer = () => {
     <footer className="w-full py-12 bg-white border-t border-gray-100">
       <div className="max-w-7xl mx-auto px-4 w-full">
         <div className="flex flex-col items-center justify-center gap-4">
-          <div className="flex items-center gap-2 text-gray-300">
-            <div className="h-px w-8 bg-gray-100"></div>
-            <MdCode size={20} />
-            <div className="h-px w-8 bg-gray-100"></div>
+          <div className="flex items-center gap-2 text-gray-300 mb-2">
+            <div className="h-px w-12 bg-gray-100"></div>
+            <div className="w-1.5 h-1.5 bg-[#F22233] rounded-full"></div>
+            <div className="h-px w-12 bg-gray-100"></div>
           </div>
           
           <p className="text-center text-[10px] font-black tracking-[0.2em] text-gray-400 uppercase">

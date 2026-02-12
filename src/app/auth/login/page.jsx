@@ -70,7 +70,7 @@ function LoginPage() {
 
   if (status === 'loading' || isLoading) {
     return (
-      <div className="min-h-screen flex flex-col justify-center items-center bg-gray-50">
+      <div className="min-h-screen flex flex-col justify-center items-center bg-white">
         <div className="w-16 h-16 border-4 border-red-50 border-t-[#F22233] rounded-full animate-spin"></div>
         <p className="mt-4 text-xs font-black text-gray-400 uppercase tracking-widest">Iniciando sistema...</p>
       </div>
@@ -78,15 +78,11 @@ function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 relative overflow-hidden">
-      {/* Decorative background */}
-      <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
-        <div className="absolute top-[-10%] right-[-5%] w-[40rem] h-[40rem] bg-[#F22233]/5 rounded-full blur-[100px]"></div>
-        <div className="absolute bottom-[10%] left-[-5%] w-[30rem] h-[30rem] bg-[#2BC7D9]/5 rounded-full blur-[100px]"></div>
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-white p-4 relative overflow-hidden">
+
 
       <div className="w-full max-w-md z-10">
-        <div className="bg-white rounded-[2.5rem] shadow-2xl shadow-gray-200 p-8 sm:p-12 border border-white/20">
+        <div className="p-8 sm:p-12">
           <div className="flex flex-col items-center mb-10">
             <h1 className="text-3xl font-black tracking-tighter flex items-center gap-2 mb-2">
               <span className="text-[#F22233]">MAMEN</span> 
@@ -98,7 +94,7 @@ function LoginPage() {
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {error && (
-              <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-[10px] uppercase font-black tracking-widest border border-red-100 text-center animate-in fade-in zoom-in-95">
+              <div className="bg-red-50 text-[#F22233] p-4 rounded-2xl text-[10px] uppercase font-black tracking-widest border border-red-100 text-center animate-in fade-in zoom-in-95">
                 {error}
               </div>
             )}
@@ -111,7 +107,7 @@ function LoginPage() {
                   type="text"
                   autoComplete="username"
                   {...register("identifier", { required: "El usuario es obligatorio" })}
-                  className="w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-red-100 transition-all placeholder:text-gray-300"
+                  className="w-full pl-12 pr-4 py-4 bg-white border-none rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-[#F22233]/10 transition-all placeholder:text-gray-300"
                   placeholder="admin@mamen.noticias"
                 />
               </div>
@@ -128,7 +124,7 @@ function LoginPage() {
                   type="password"
                   autoComplete="current-password"
                   {...register("password", { required: "La contraseña es obligatoria" })}
-                  className="w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-red-100 transition-all placeholder:text-gray-300"
+                  className="w-full pl-12 pr-4 py-4 bg-white border-none rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-[#F22233]/10 transition-all placeholder:text-gray-300"
                   placeholder="••••••••"
                 />
               </div>
@@ -140,13 +136,13 @@ function LoginPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-5 bg-gray-900 text-white rounded-[1.5rem] font-black text-xs tracking-[0.2em] uppercase hover:bg-black transition-all duration-300 shadow-xl shadow-gray-200 hover:shadow-black/10 active:scale-95 flex items-center justify-center gap-2 group disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none"
+              className="w-full py-5 bg-[#F22233] text-white rounded-[1.5rem] font-black text-xs tracking-[0.2em] uppercase transition-all duration-300 shadow-xl shadow-red-100 hover:opacity-90 active:scale-95 flex items-center justify-center gap-2 group disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none"
             >
               {isSubmitting ? (
                 <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
               ) : (
                 <>
-                  <MdLogin size={20} className="text-[#F22233] group-hover:scale-110 transition-transform" />
+                  <MdLogin size={20} className="text-white group-hover:scale-110 transition-transform" />
                   <span>Ingresar al Sistema</span>
                 </>
               )}

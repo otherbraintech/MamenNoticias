@@ -32,8 +32,8 @@ export default function RootLayout({ children }) {
             <main className="flex-1 w-full flex flex-col">
               {children}
             </main>
-            {/* Footer universal al fondo */}
-            <Footer />
+            {/* Solo mostrar Footer si no es página de autenticación */}
+            {!isAuthPage && <Footer />}
             <Toaster position="bottom-right" richColors closeButton />
           </div>
         </Providers>

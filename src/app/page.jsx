@@ -14,65 +14,67 @@ function HomePage() {
   }
 
   return (
-    <div className="flex flex-col flex-1 min-h-screen bg-white">
-      <main className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 relative overflow-hidden">
-        {/* Background Decorative Elements */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full pointer-events-none opacity-20">
-          <div className="absolute top-[-10%] right-[-5%] w-96 h-96 bg-red-100 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-[10%] left-[-5%] w-72 h-72 bg-blue-50 rounded-full blur-3xl"></div>
+    <div className="flex-1 flex flex-col bg-white overflow-hidden">
+      <main className="flex-1 flex flex-col items-center justify-center p-4 sm:p-8 relative">
+        {/* Modern Background Gradient */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#F22233]/5 via-white to-white"></div>
         </div>
 
-        <div className="w-full max-w-4xl mx-auto text-center space-y-8 sm:space-y-12 relative z-10">
-          {/* Logo Container */}
-          <div className="relative group">
-            <div className="absolute -inset-4 bg-gradient-to-r from-red-600/5 to-transparent rounded-full blur-2xl group-hover:from-red-600/10 transition-all duration-700"></div>
+        <div className="w-full max-w-4xl mx-auto text-center space-y-4 sm:space-y-8 relative z-10">
+          {/* Logo Section - Much smaller and more elegant */}
+          <div className="relative inline-block w-full px-4">
+            <div className="absolute -inset-8 bg-[#F22233]/5 rounded-full blur-3xl"></div>
             <Image
               src="https://i.ibb.co/sJ9GBHXC/Copilot-20251106-114651-1.png"
               alt="Mamen Noticias"
-              width={800}
-              height={200}
-              className="w-full h-auto max-w-2xl mx-auto object-contain drop-shadow-2xl transition-transform duration-500 hover:scale-105"
+              width={400}
+              height={120}
+              className="w-full h-auto max-w-[140px] sm:max-w-[200px] md:max-w-[260px] mx-auto object-contain drop-shadow-xl transition-all duration-700 hover:scale-[1.02]"
               priority
+              unoptimized
             />
           </div>
 
           {/* Value Proposition */}
-          <div className="space-y-4">
-            <h2 className="text-sm sm:text-base font-black uppercase tracking-[0.4em] text-red-600">
-              Gestión Estratégica de Medios
-            </h2>
-            <p className="text-gray-500 text-lg sm:text-xl md:text-2xl font-bold max-w-2xl mx-auto leading-tight italic">
-              &quot;Plataforma integral para el monitoreo, filtrado y reporte de noticias digitales en tiempo real.&quot;
+          <div className="space-y-4 px-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#F22233]/10 text-[#F22233] rounded-full">
+              <span className="w-1.2 h-1.2 bg-[#F22233] rounded-full animate-pulse"></span>
+              <span className="text-[9px] font-black uppercase tracking-widest">Monitoreo Activo V2.0</span>
+            </div>
+            
+            <h1 className="text-xl sm:text-2xl md:text-4xl font-black text-gray-900 tracking-tighter leading-tight">
+              Gestión Estratégica <br className="hidden sm:block" />
+              <span className="text-[#2BC7D9]">de Medios Digitales</span>
+            </h1>
+            
+            <p className="text-gray-400 text-xs sm:text-sm md:text-base font-medium max-w-lg mx-auto leading-relaxed border-l-2 border-[#2BC7D9]/20 pl-4 py-1 italic bg-gray-50/50 rounded-r-xl">
+              &quot;Plataforma integral de inteligencia para el monitoreo y reporte de noticias en tiempo real.&quot;
             </p>
           </div>
 
-          {/* Primary CTA */}
-          <div className="pt-4 flex flex-col items-center gap-4">
+          {/* Action Buttons */}
+          <div className="pt-4 flex flex-col items-center gap-6">
             <a
               href={session ? "/dashboard" : "/auth/login"}
-              className="group flex items-center justify-center gap-3 px-10 py-5 bg-gray-900 text-white rounded-[2rem] font-black text-xs sm:text-sm tracking-[0.2em] uppercase hover:bg-black transition-all duration-300 shadow-2xl shadow-gray-400 hover:shadow-black/20 active:scale-95"
+              className="group relative flex items-center justify-center gap-3 px-8 py-4 bg-[#F22233] text-white rounded-2xl font-black text-[10px] sm:text-xs tracking-[0.2em] uppercase overflow-hidden transition-all duration-300 shadow-xl shadow-red-100 hover:opacity-90 hover:scale-105 active:scale-95"
             >
               {session ? (
                 <>
-                  <MdDashboard size={20} className="text-red-500 shrink-0" />
+                  <MdDashboard size={18} className="text-white shrink-0" />
                   <span>Panel de Control</span>
                 </>
               ) : (
                 <>
-                  <MdLogin size={20} className="text-red-500 shrink-0" />
-                  <span>Acceso Administrador</span>
+                  <MdLogin size={18} className="text-white shrink-0" />
+                  <span>Iniciar Sesión</span>
                 </>
               )}
-              <MdArrowForward size={20} className="group-hover:translate-x-1 transition-transform" />
+              <MdArrowForward size={18} className="group-hover:translate-x-1 transition-transform" />
             </a>
-            
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 px-4 py-1.5 rounded-full border border-gray-100">
-              V 2.0 • MONITOREO ACTIVO
-            </p>
           </div>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }
