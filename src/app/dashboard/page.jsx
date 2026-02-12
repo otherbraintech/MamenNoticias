@@ -141,7 +141,7 @@ export default function HomePage() {
       <main className="max-w-6xl mx-auto px-4 py-8">
         <div className="space-y-16">
           <NewsSection
-            title="MAMEN SAAVEDRA"
+            title="NOTICIAS EXTRAIDAS HOY"
             noticias={noticias}
             colorClass="text-[#2BC7D9]"
             manejarEstado={manejarEstado}
