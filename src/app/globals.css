@@ -7,7 +7,7 @@ body {
   }
 img {
     width: 100px;
-    height: auto;
+    height: auto; 
   }
 
 @layer base {
