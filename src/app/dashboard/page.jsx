@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import NewsSection from "@/components/NewsSection";
@@ -33,21 +33,9 @@ export default function HomePage() {
   } = usePDFGenerator(noticias);
 
   const errorMessage = errorGen;
-  const [mensajeExtraccion, setMensajeExtraccion] = useState("");
 
-  useEffect(() => {
-    if (articulosBrutos && articulosBrutos.length > 0) {
-      const ahora = new Date();
-      const ultimo = articulosBrutos.reduce((a, b) => new Date(a.creado) > new Date(b.creado) ? a : b);
-      const creado = new Date(ultimo.creado);
-      const diffMin = (ahora - creado) / 1000 / 60;
-      if (diffMin < 2) {
-        setMensajeExtraccion("Extrayendo y filtrando noticias, espere unos minutos");
-        return;
-      }
-    }
-    setMensajeExtraccion("");
-  }, [articulosBrutos]);
+
+
 
   if (loading) return <PageLoading message={statusMessage} />;
 
@@ -131,11 +119,7 @@ export default function HomePage() {
             </div>
           </div>
           
-          {mensajeExtraccion && (
-            <div className="mt-4 bg-yellow-400 text-black text-[10px] font-black uppercase tracking-[0.2em] py-2 rounded-lg text-center animate-pulse">
-              {mensajeExtraccion}
-            </div>
-          )}
+
         </div>
       </header>
 
